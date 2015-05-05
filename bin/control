@@ -1,6 +1,10 @@
 #!/bin/bash
 source $OPENSHIFT_CARTRIDGE_SDK_BASH
 
+created_cluster_template=${OPENSHIFT_SAHARA_DIR}"/created_cluster_template.json"
+created_cluster=${OPENSHIFT_SAHARA_DIR}"/created_cluster.json"
+runend_job=${OPENSHIFT_SAHARA_DIR}"/runned_job.json"
+
 function run_hook() {
   local path="$OPENSHIFT_REPO_DIR/.openshift/action_hooks/$1"
   if [ -f "$path" -a -x "$path" ]
@@ -12,13 +16,47 @@ function run_hook() {
 }
 
 function start() {
-    echo "Starting DIY cartridge"
-    run_hook start
+    echo "Starting Sahara cartridge"
+    source ${OPENSHIFT_REPO_DIR}/cluster.cfg
+
+    curl -H "Content-Type: application/json" \
+            -X POST \
+            ${sahara.url}"/cluster-templates" \
+            -o ${created_cluster_template} \
+            -d `cat ${OPENSHIFT_REPO_DIR}/cluster/cluster_template.json`
 }
 
+function deploy(){
+    echo "Deploying with Sahara"
+    source ${OPENSHIFT_REPO_DIR}/cluster/cluster.properties
+
+    tenant_id=`cat ${created_cluster_template} | grep -Po '(?<="tenant_id": ")[^"]*'`
+    template_id=`cat ${created_cluster_template} | grep -Po '(?<="id": ")[^"]*'`
+
+
+    curl -H "Content-Type: application/json" \
+            -X POST \
+            ${sahara.url}"/v1.0/"${tenant_id}"/clusters" \
+            -d '{
+                "plugin_name": "vanilla",
+                "hadoop_version": "2.4.1",
+                "cluster_template_id": "'${template_id}'",
+                "default_image_id": "'${sahara.default_image_id}'",
+                "user_keypair_id": "doc-keypair",
+                "name": "doc-cluster",
+                "cluster_configs": {}
+            }' \
+            -o ${created_cluster}
+
+    curl -H "Content-Type: application/json"  \
+            -X POST \
+            ${sahara.url}'/v1.0/'${tenant_id}"/jobs"
+            -d `cat ${OPENSHIFT_REPO_DIR}/cluster/job.json` \
+            -o ${runend_job}
+
+}
 function stop() {
-    echo "Stopping DIY cartridge"
-    run_hook stop
+    echo "Stopping Sahara"
 }
 
 function restart() {
