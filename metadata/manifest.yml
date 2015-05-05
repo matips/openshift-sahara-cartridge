@@ -1,6 +1,6 @@
 ---
 Name: Sahara-plugin
-Cartridge-Short-Name: Sahara-plugin
+Cartridge-Short-Name: sp
 Display-Name: Shara-plugin 0.1
 Description: The Sahra Plugin to create, manage and destroy cluster
 Version: '0.1'
