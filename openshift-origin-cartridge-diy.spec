@@ -1,6 +1,6 @@
 %global cartridgedir %{_libexecdir}/openshift/cartridges/diy
 
-Summary:       Sahara Plugin
+Summary:       Sahara-Plugin
 Name:          openshift-sahara-plugin
 Version: 1.24.1
 Release:       1%{?dist}
