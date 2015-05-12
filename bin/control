@@ -1,9 +1,9 @@
 #!/bin/bash
 source $OPENSHIFT_CARTRIDGE_SDK_BASH
 
-created_cluster_template=${OPENSHIFT_DIY_DIR}"/created_cluster_template.json"
-created_cluster=${OPENSHIFT_DIY_DIR}"/created_cluster.json"
-runend_job=${OPENSHIFT_DIY_DIR}"/runned_job.json"
+created_cluster_template=${OPENSHIFT_DIY_DIR}"created_cluster_template.json"
+created_cluster=${OPENSHIFT_DIY_DIR}"created_cluster.json"
+runend_job=${OPENSHIFT_DIY_DIR}"runned_job.json"
 
 function run_hook() {
   local path="$OPENSHIFT_REPO_DIR/.openshift/action_hooks/$1"
@@ -17,13 +17,17 @@ function run_hook() {
 
 function start() {
     echo "Starting Sahara cartridge"
+    if [ -f ${OPENSHIFT_REPO_DIR}/cluster.cfg ]
     source ${OPENSHIFT_REPO_DIR}/cluster.cfg
+}
 
+function create_clusetr(){
     curl -H "Content-Type: application/json" \
             -X POST \
             ${sahara.url}"/cluster-templates" \
             -o ${created_cluster_template} \
             -d `cat ${OPENSHIFT_REPO_DIR}/cluster/cluster_template.json`
+
 }
 
 function deploy(){
