@@ -94,8 +94,8 @@ function createCluster(){
         SPARK_MANAGEMENT_KEY=`cat ${OPENSHIFT_SP_DIR}temp/response_launch_cluster.json | ${OPENSHIFT_SP_DIR}bin/jq -r '.cluster.management_public_key'`
     fi
 
-    echo $SPARK_MANAGEMENT_KEY > ${OPENSHIFT_SP_DIR}env/SPARK_MANAGEMENT_KEY  2>> ${OPENSHIFT_SP_LOG}
-    echo $SPARK_CLUSTER_ID > ${OPENSHIFT_SP_DIR}env/SPARK_CLUSTER_ID  2>> ${OPENSHIFT_SP_LOG}
+    echo $SPARK_MANAGEMENT_KEY > ${OPENSHIFT_SP_DIR}temp/SPARK_MANAGEMENT_KEY
+    echo $SPARK_CLUSTER_ID > ${OPENSHIFT_SP_DIR}temp/SPARK_CLUSTER_ID
 
     echo "Cluster id: $SPARK_CLUSTER_ID" >> ${OPENSHIFT_SP_LOG}
     echo "Cluster menagment key: $SPARK_MANAGEMENT_KEY" >> ${OPENSHIFT_SP_LOG}
