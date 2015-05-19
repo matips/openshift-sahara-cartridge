@@ -12,6 +12,7 @@ function authenticate(){
     TOKEN=`cat ${OPENSHIFT_SP_DIR}temp/response_authenticate.json | ${OPENSHIFT_SP_DIR}bin/jq -r '.access.token.id'`
     client_message "Your token is: $TOKEN"
     echo $TOKEN > ${OPENSHIFT_SP_DIR}env/OPENSTACK_TOKEN
+    OPENSTACK_TOKEN=${TOKEN}
     echo "Token is saved in OPENSTACK_TOKEN env variable: $OPENSTACK_TOKEN" >> ${OPENSHIFT_SP_LOG}
 }
 
@@ -62,6 +63,7 @@ function createClusterTemplate(){
 
 function createCluster(){
     authenticate
+    
     cat ${OPENSHIFT_SP_DIR}cluster/json/launch_cluster.json | \
                 ${OPENSHIFT_SP_DIR}bin/jq ".cluster_template_id = \"${SPARK_CLUSTER_TEMPLATE_ID}\"" \
                 > "${OPENSHIFT_SP_DIR}"/temp/launch_cluster_resolved.json
@@ -75,7 +77,7 @@ function createCluster(){
                     > "${OPENSHIFT_SP_DIR}"/temp/response_launch_cluster.json
 
     echo `cat "${OPENSHIFT_SP_DIR}"/temp/response_launch_cluster.json`
-    
+
     ERROR=`cat ${OPENSHIFT_SP_DIR}temp/response_launch_cluster.json | ${OPENSHIFT_SP_DIR}bin/jq -r '.error_name?'`
     echo "Error: ${ERROR}" >> ${OPENSHIFT_SP_LOG}
     if [ ${ERROR}='NAME_ALREADY_EXISTS' ]
