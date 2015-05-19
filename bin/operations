@@ -29,7 +29,7 @@ function createMasterNodeGroup(){
 }
 
 function createSlaveNodeGroup(){
-    curl -s -X POST "$SAHARA_URL/$TENANT_ID/node-group-templates" \
+    curl -s -X POST "$SAHARA_URL/node-group-templates" \
                     -H "Content-Type: application/json" \
                     -H "X-Auth-Token: $TOKEN" \
                     -d @"${OPENSHIFT_SP_DIR}"/cluster/json/ng-slave.json \
@@ -45,7 +45,7 @@ function createClusterTemplate(){
             -e "s/NTEMPLATE_SLAVE_ID/$SPARK_TEMPLATE_SLAVE_ID/g" \
             "${OPENSHIFT_SP_DIR}"/cluster/json/cluster_basic.json > "${OPENSHIFT_SP_DIR}"/temp/cluster_basic_resolved.json
 
-    curl -s -X POST "$SAHARA_URL/$TENANT_ID/cluster-templates" \
+    curl -s -X POST "$SAHARA_URL/cluster-templates" \
                     -H "Content-Type: application/json" \
                     -H "X-Auth-Token: $TOKEN" \
                     -d @"${OPENSHIFT_SP_DIR}"/temp/cluster_basic_resolved.json \
