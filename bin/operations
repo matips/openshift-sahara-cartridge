@@ -11,7 +11,6 @@ function authenticate(){
     # parse response and save token to appropriate variable
     TOKEN=`cat ${OPENSHIFT_SP_DIR}temp/response_authenticate.json | ${OPENSHIFT_SP_DIR}bin/jq -r '.access.token.id'`
     client_message "Your token is: $TOKEN"
-    echo $TOKEN > ${OPENSHIFT_SP_DIR}env/OPENSTACK_TOKEN 2>> ${OPENSHIFT_SP_LOG}
     OPENSTACK_TOKEN=${TOKEN}
     echo "Token is saved in OPENSTACK_TOKEN env variable: $OPENSTACK_TOKEN" >> ${OPENSHIFT_SP_LOG}
 }
