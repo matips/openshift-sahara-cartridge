@@ -63,9 +63,10 @@ function createClusterTemplate(){
 
 function createCluster(){
     authenticate
-    
+
     cat ${OPENSHIFT_SP_DIR}cluster/json/launch_cluster.json | \
                 ${OPENSHIFT_SP_DIR}bin/jq ".cluster_template_id = \"${SPARK_CLUSTER_TEMPLATE_ID}\"" \
+                ${OPENSHIFT_SP_DIR}bin/jq ".name = \"${SPARK_CLUSTER_NAME}\"" \
                 > "${OPENSHIFT_SP_DIR}"/temp/launch_cluster_resolved.json
 
     echo `cat "${OPENSHIFT_SP_DIR}"/temp/launch_cluster_resolved.json`
@@ -82,7 +83,7 @@ function createCluster(){
     echo "Error: ${ERROR}" >> ${OPENSHIFT_SP_LOG}
     if [ ${ERROR}='NAME_ALREADY_EXISTS' ]
     then
-        echo "Cluster already exists"
+        echo "Cluster already exists" >> ${OPENSHIFT_SP_LOG}
     else
         SPARK_CLUSTER_ID=`cat ${OPENSHIFT_SP_DIR}temp/response_launch_cluster.json | ${OPENSHIFT_SP_DIR}bin/jq -r '.cluster.id'`
         SPARK_MANAGEMENT_KEY=`cat ${OPENSHIFT_SP_DIR}temp/response_launch_cluster.json | ${OPENSHIFT_SP_DIR}bin/jq -r '.cluster.management_public_key'`
