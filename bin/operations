@@ -1,6 +1,5 @@
 #!/bin/sh
-
-
+source ../cluster/config.properties
 
 function authenticate(){
     client_message "Your token is: $OPENSTACK_TOKEN"
@@ -18,7 +17,7 @@ function authenticate(){
 
 function createMasterNodeGroup(){
 
-    curl -s -X POST "$SAHARA_URL/$TENANT_ID/node-group-templates" \
+    curl -s -X POST "$SAHARA_URL/node-group-templates" \
                     -H "Content-Type: application/json" \
                     -H "X-Auth-Token: $TOKEN" \
                     -d @"${OPENSHIFT_SP_DIR}"/cluster/json/ng-master.json \
