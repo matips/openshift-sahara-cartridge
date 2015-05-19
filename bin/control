@@ -5,6 +5,7 @@ cd -P "$(dirname $0)"
 source $OPENSHIFT_CARTRIDGE_SDK_BASH
 source ../cluster/config.properties
 source ../bin/operations
+OPENSHIFT_SP_LOG=${OPENSHIFT_LOG_DIR}sahara.log
 
 function run_hook() {
   local path="$OPENSHIFT_REPO_DIR/.openshift/action_hooks/$1"
@@ -25,7 +26,7 @@ function start() {
 }
 
 function deploy(){
-    echo "Deploying with Sahara"
+    echo "Deploying with Sahara" >> ${OPENSHIFT_SP_LOG}
     createCluster "$OPENSHIFT_REPO_DIR/cluster/config.properties"
 
 #    curl -H "Content-Type: application/json"  \
