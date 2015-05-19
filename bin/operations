@@ -65,7 +65,7 @@ function createCluster(){
     authenticate
 
     cat ${OPENSHIFT_SP_DIR}cluster/json/launch_cluster.json | \
-                ${OPENSHIFT_SP_DIR}bin/jq ".cluster_template_id = \"${SPARK_CLUSTER_TEMPLATE_ID}\"" \
+                ${OPENSHIFT_SP_DIR}bin/jq ".cluster_template_id = \"${SPARK_CLUSTER_TEMPLATE_ID}\"" | \
                 ${OPENSHIFT_SP_DIR}bin/jq ".name = \"${SPARK_CLUSTER_NAME}\"" \
                 > "${OPENSHIFT_SP_DIR}"/temp/launch_cluster_resolved.json
 
