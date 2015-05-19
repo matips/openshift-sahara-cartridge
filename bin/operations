@@ -6,8 +6,8 @@ function authenticate(){
     client_message "Your token is: $OPENSTACK_TOKEN"
     curl -s -X POST "$OPENSTACK_AUTH_URL"/tokens \
                     -H "Content-Type: application/json" \
-                    -d @"$OPENSHIFT_DIY_DIR"/cluster/json/authenticate.json \
-                    > "$OPENSHIFT_DIY_DIR"/temp/response_authenticate.json
+                    -d @"$OPENSHIFT_DIY_DIR"cluster/json/authenticate.json \
+                    > "$OPENSHIFT_DIY_DIR"temp/response_authenticate.json
 
     # parse response and save token to appropriate variable
     TOKEN=`cat $OPENSHIFT_DIY_DIR/temp/response_authenticate.json | $OPENSHIFT_DIY_DIR/bin/util/jq -r '.access.token.id'`
