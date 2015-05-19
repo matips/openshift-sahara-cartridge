@@ -10,7 +10,7 @@ client_message "Sahara url: $SAHARA_URL/$TENANT_ID"
 client_message "Logfile: $OPENSHIFT_SPARK_LOG"
 client_message "Openstack Auth url: $OPENSTACK_AUTH_URL"
 client_message "Openstack url: $OPENSTACK_URL"
-client_message printenv
+client_message `printenv`
 
 echo "Sahara url: $SAHARA_URL/$TENANT_ID" >> OPENSHIFT_DIY_LOG
 echo "Create node group template url: $SAHARA_URL/$TENANT_ID"/node-group-templates >> OPENSHIFT_DIY_LOG
