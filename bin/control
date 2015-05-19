@@ -70,6 +70,8 @@ case "$1" in
   stop)      stop ;;
   restart)   restart ;;
   status)    status ;;
+  deploy)    deploy ;;
+  build)     deploy ;;
   reload)    reload ;;
   tidy)      tidy ;;
   *)         exit 0
