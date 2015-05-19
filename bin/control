@@ -18,7 +18,7 @@ function run_hook() {
 }
 
 function start() {
-    echo "Starting Sahara cartridge"
+    echo "Starting Sahara cartridge" >> ${OPENSHIFT_SP_LOG}
     if [ -f ${OPENSHIFT_REPO_DIR}/cluster.cfg ]
     then
         source ${OPENSHIFT_REPO_DIR}/cluster.cfg
@@ -37,7 +37,7 @@ function deploy(){
 
 }
 function stop() {
-    echo "Stopping Sahara"
+    echo "Stopping Sahara" >> ${OPENSHIFT_SP_LOG}
 }
 
 function restart() {
@@ -55,11 +55,12 @@ function status() {
 }
 
 function reload() {
-    client_result "Reloading Shara cart"
+    client_result "Reloading Shara cart" >> ${OPENSHIFT_SP_LOG}
     restart
 }
 
 function tidy() {
+
   client_message "Emptying diy logs in dir: $OPENSHIFT_LOG_DIR"
   shopt -s dotglob
   rm -rf $OPENSHIFT_LOG_DIR/diy.log*
