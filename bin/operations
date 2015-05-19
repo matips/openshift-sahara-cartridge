@@ -42,7 +42,7 @@ function createSlaveNodeGroup(){
 
 function createClusterTemplate(){
     authenticate
-    
+
     cat  "${OPENSHIFT_SP_DIR}"/cluster/json/cluster_basic.json | \
                bin/jq ".node_groups[0].node_group_template_id = \"${SPARK_TEMPLATE_MASTER_ID}\"" | \
                bin/jq ".node_groups[1].node_group_template_id = \"${SPARK_TEMPLATE_SLAVE_ID}\"" | \
@@ -62,7 +62,7 @@ function createClusterTemplate(){
 
 function createCluster(){
 
-    cat {OPENSHIFT_SP_DIR}cluster/json/launch_cluster.json | bin/jq ".cluster_template_id = '${SPARK_CLUSTER_TEMPLATE_ID}'"
+    cat {OPENSHIFT_SP_DIR}cluster/json/launch_cluster.json | ${OPENSHIFT_SP_DIR}bin/jq ".cluster_template_id = '${SPARK_CLUSTER_TEMPLATE_ID}'"
 
     sed -e "s/CLUSTER_TEMPLATE_ID/$SPARK_CLUSTER_TEMPLATE_ID/g" \
             "${OPENSHIFT_SP_DIR}"/cluster/json/launch_cluster.json >> "${OPENSHIFT_SP_DIR}"/temp/launch_cluster_resolved.json
