@@ -13,7 +13,7 @@ function authenticate(){
     TOKEN=`cat ${OPENSHIFT_SP_DIR}temp/response_authenticate.json | ${OPENSHIFT_SP_DIR}bin/jq -r '.access.token.id'`
     client_message "Your token is: $TOKEN"
     echo $TOKEN > ${OPENSHIFT_SP_DIR}env/OPENSTACK_TOKEN
-    echo "Token is saved in OPENSTACK_TOKEN env variable: $OPENSTACK_TOKEN" >> $OPENSHIFT_SPARK_LOG
+    echo "Token is saved in OPENSTACK_TOKEN env variable: $OPENSTACK_TOKEN" >> $OPENSHIFT_SP_LOG
 }
 
 function createMasterNodeGroup(){
