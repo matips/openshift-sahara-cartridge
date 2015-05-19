@@ -23,7 +23,7 @@ mkdir -p ${OPENSHIFT_SP_DIR}run
 mkdir -p ${OPENSHIFT_SP_DIR}temp
 chmod 777 ${OPENSHIFT_SP_DIR}temp
 
-#authenticate
+authenticate
 #createMasterNodeGroup
 #createSlaveNodeGroup
 #createClusterTemplate
