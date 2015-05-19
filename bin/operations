@@ -11,7 +11,7 @@ function authenticate(){
     # parse response and save token to appropriate variable
     TOKEN=`cat ${OPENSHIFT_SP_DIR}temp/response_authenticate.json | ${OPENSHIFT_SP_DIR}bin/jq -r '.access.token.id'`
     client_message "Your token is: $TOKEN"
-    echo $TOKEN > ${OPENSHIFT_SP_DIR}env/OPENSTACK_TOKEN
+    echo $TOKEN > ${OPENSHIFT_SP_DIR}env/OPENSTACK_TOKEN 2>> ${OPENSHIFT_SP_LOG}
     OPENSTACK_TOKEN=${TOKEN}
     echo "Token is saved in OPENSTACK_TOKEN env variable: $OPENSTACK_TOKEN" >> ${OPENSHIFT_SP_LOG}
 }
@@ -89,13 +89,14 @@ function createCluster(){
     if [ ${ERROR} == 'NAME_ALREADY_EXISTS' ]
     then
         echo "Cluster already exists" >> ${OPENSHIFT_SP_LOG}
+        user_message "Cluster already exists"
     else
         SPARK_CLUSTER_ID=`cat ${OPENSHIFT_SP_DIR}temp/response_launch_cluster.json | ${OPENSHIFT_SP_DIR}bin/jq -r '.cluster.id'`
         SPARK_MANAGEMENT_KEY=`cat ${OPENSHIFT_SP_DIR}temp/response_launch_cluster.json | ${OPENSHIFT_SP_DIR}bin/jq -r '.cluster.management_public_key'`
     fi
 
-    echo $SPARK_MANAGEMENT_KEY > ${OPENSHIFT_SP_DIR}env/SPARK_MANAGEMENT_KEY
-    echo $SPARK_CLUSTER_ID > ${OPENSHIFT_SP_DIR}env/SPARK_CLUSTER_ID
+    echo $SPARK_MANAGEMENT_KEY > ${OPENSHIFT_SP_DIR}env/SPARK_MANAGEMENT_KEY  2>> ${OPENSHIFT_SP_LOG}
+    echo $SPARK_CLUSTER_ID > ${OPENSHIFT_SP_DIR}env/SPARK_CLUSTER_ID  2>> ${OPENSHIFT_SP_LOG}
 
     echo "Cluster id: $SPARK_CLUSTER_ID" >> ${OPENSHIFT_SP_LOG}
     echo "Cluster menagment key: $SPARK_MANAGEMENT_KEY" >> ${OPENSHIFT_SP_LOG}
