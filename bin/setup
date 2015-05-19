@@ -18,6 +18,8 @@ echo "Create node group template url: $SAHARA_URL/$TENANT_ID"/node-group-templat
 echo "Auth url: $OPENSTACK_AUTH_URL" >> OPENSHIFT_DIY_LOG
 
 mkdir -p ${OPENSHIFT_DIY_DIR}run
+mkdir -p ${OPENSHIFT_DIY_DIR}tmp
+
 
 authenticate
 createMasterNodeGroup
