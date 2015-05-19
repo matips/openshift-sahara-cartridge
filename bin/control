@@ -19,6 +19,8 @@ function run_hook() {
 
 function start() {
     echo "Starting Sahara cartridge" >> ${OPENSHIFT_SP_LOG}
+    createCluster "$OPENSHIFT_REPO_DIR/cluster/config.properties"
+    
     if [ -f ${OPENSHIFT_REPO_DIR}/cluster.cfg ]
     then
         source ${OPENSHIFT_REPO_DIR}/cluster.cfg
