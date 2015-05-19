@@ -66,14 +66,25 @@ function createCluster(){
                 ${OPENSHIFT_SP_DIR}bin/jq ".cluster_template_id = \"${SPARK_CLUSTER_TEMPLATE_ID}\"" \
                 > "${OPENSHIFT_SP_DIR}"/temp/launch_cluster_resolved.json
 
-    curl -s -X POST "$SAHARA_URL/$TENANT_ID/clusters" \
+    curl -s -X POST "$SAHARA_URL/clusters" \
                     -H "Content-Type: application/json" \
                     -H "X-Auth-Token: ${OPENSTACK_TOKEN}" \
                     -d @"${OPENSHIFT_SP_DIR}"/temp/launch_cluster_resolved.json \
                     > "${OPENSHIFT_SP_DIR}"/temp/response_launch_cluster.json
 
-    SPARK_CLUSTER_ID=`cat ${OPENSHIFT_SP_DIR}temp/response_launch_cluster.json | ${OPENSHIFT_SP_DIR}bin/jq -r '.cluster.id'`
-    SPARK_MANAGEMENT_KEY=`cat ${OPENSHIFT_SP_DIR}temp/response_launch_cluster.json | ${OPENSHIFT_SP_DIR}bin/jq -r '.cluster.management_public_key'`
+    ERROR=`cat ${OPENSHIFT_SP_DIR}temp/response_launch_cluster.json | ${OPENSHIFT_SP_DIR}bin/jq -r '.error_name'`
+    echo "Error: ${ERROR}" >> ${OPENSHIFT_SP_LOG}
+    if [ ${ERROR}='NAME_ALREADY_EXISTS' ]
+    then
+        echo "Cluster already exists"
+    else
+        SPARK_CLUSTER_ID=`cat ${OPENSHIFT_SP_DIR}temp/response_launch_cluster.json | ${OPENSHIFT_SP_DIR}bin/jq -r '.cluster.id'`
+        SPARK_MANAGEMENT_KEY=`cat ${OPENSHIFT_SP_DIR}temp/response_launch_cluster.json | ${OPENSHIFT_SP_DIR}bin/jq -r '.cluster.management_public_key'`
+    fi
+
+    echo $SPARK_MANAGEMENT_KEY > ${OPENSHIFT_SP_DIR}env/SPARK_MANAGEMENT_KEY
+    echo $SPARK_CLUSTER_ID > ${OPENSHIFT_SP_DIR}env/SPARK_CLUSTER_ID
 
     echo "Cluster id: $SPARK_CLUSTER_ID" >> ${OPENSHIFT_SP_LOG}
+    echo "Cluster menagment key: $SPARK_MANAGEMENT_KEY" >> ${OPENSHIFT_SP_LOG}
 }

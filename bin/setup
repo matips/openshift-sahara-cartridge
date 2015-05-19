@@ -27,6 +27,6 @@ mkdir -p ${OPENSHIFT_SP_DIR}temp
 #createMasterNodeGroup
 #createSlaveNodeGroup
 #createClusterTemplate
-#createCluster
+createCluster
 
 exit 0
