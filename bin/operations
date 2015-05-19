@@ -66,6 +66,8 @@ function createCluster(){
                 ${OPENSHIFT_SP_DIR}bin/jq ".cluster_template_id = \"${SPARK_CLUSTER_TEMPLATE_ID}\"" \
                 > "${OPENSHIFT_SP_DIR}"/temp/launch_cluster_resolved.json
 
+    echo `cat "${OPENSHIFT_SP_DIR}"/temp/launch_cluster_resolved.json`
+    
     curl -s -X POST "$SAHARA_URL/clusters" \
                     -H "Content-Type: application/json" \
                     -H "X-Auth-Token: ${OPENSTACK_TOKEN}" \
