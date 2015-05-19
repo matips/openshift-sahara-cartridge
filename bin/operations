@@ -91,12 +91,10 @@ function createCluster(){
         client_message "Cluster already exists"
     else
         SPARK_CLUSTER_ID=`cat ${OPENSHIFT_SP_DIR}temp/response_launch_cluster.json | ${OPENSHIFT_SP_DIR}bin/jq -r '.cluster.id'`
-        SPARK_MANAGEMENT_KEY=`cat ${OPENSHIFT_SP_DIR}temp/response_launch_cluster.json | ${OPENSHIFT_SP_DIR}bin/jq -r '.cluster.management_public_key'`
+        client_message "Created cluster ID: ${SPARK_CLUSTER_ID}"
     fi
 
     echo $SPARK_MANAGEMENT_KEY > ${OPENSHIFT_SP_DIR}temp/SPARK_MANAGEMENT_KEY
-    echo $SPARK_CLUSTER_ID > ${OPENSHIFT_SP_DIR}temp/SPARK_CLUSTER_ID
 
     echo "Cluster id: $SPARK_CLUSTER_ID" >> ${OPENSHIFT_SP_LOG}
-    echo "Cluster menagment key: $SPARK_MANAGEMENT_KEY" >> ${OPENSHIFT_SP_LOG}
 }
