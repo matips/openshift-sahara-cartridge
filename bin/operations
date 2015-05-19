@@ -106,11 +106,9 @@ function createCluster(){
 
         SPARK_CLUSTER_ID=`cat ${OPENSHIFT_SP_DIR}temp/response_list_clusters.json |
                 ${OPENSHIFT_SP_DIR}/bin/jq '.clusters' |
-                ${OPENSHIFT_SP_DIR}/bin/jq 'map(select(.name=="mp-cluster-36"))[0].id'`
+                ${OPENSHIFT_SP_DIR}/bin/jq 'map(select(.name=="mp-cluster-36"))[0].id' |
+                cut -d "'" -f2`
 
-        SPARK_CLUSTER_ID=`cat ${OPENSHIFT_SP_DIR}temp/response_list_clusters.json |
-                ${OPENSHIFT_SP_DIR}/bin/jq '.clusters' |
-                ${OPENSHIFT_SP_DIR}/bin/jq 'map(select(.name=="mp-cluster-36"))[0].id'`
 
         client_message "Existing cluster ID: ${SPARK_CLUSTER_ID}"
 
