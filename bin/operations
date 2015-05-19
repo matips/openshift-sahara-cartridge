@@ -63,8 +63,10 @@ function createClusterTemplate(){
 
 function createCluster(){
     if [ ! -z "$1" ]
+    then
         source $1
-
+    fi
+    
     authenticate
 
     cat ${OPENSHIFT_SP_DIR}cluster/json/launch_cluster.json | \
