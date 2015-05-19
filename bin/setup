@@ -23,10 +23,10 @@ mkdir -p ${OPENSHIFT_SP_DIR}run
 mkdir -p ${OPENSHIFT_SP_DIR}temp
 
 
-authenticate
-createMasterNodeGroup
-createSlaveNodeGroup
-createClusterTemplate
+#authenticate
+#createMasterNodeGroup
+#createSlaveNodeGroup
+#createClusterTemplate
 createCluster
 
 exit 0
