@@ -22,7 +22,7 @@ echo "Auth url: $OPENSTACK_AUTH_URL" >> ${OPENSHIFT_SP_LOG}
 mkdir -p ${OPENSHIFT_SP_DIR}run
 mkdir -p ${OPENSHIFT_SP_DIR}temp
 
-echo ${OPENSHIFT_SP_LOG} > ${OPENSHIFT_SP_DIR}env/OPENSHIFT_SP_DIR 2>> ${OPENSHIFT_SP_LOG}
+#echo ${OPENSHIFT_SP_LOG} > ${OPENSHIFT_SP_DIR}env/OPENSHIFT_SP_DIR 2>> ${OPENSHIFT_SP_LOG}
 
 authenticate
 #createMasterNodeGroup
