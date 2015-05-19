@@ -19,8 +19,8 @@ function run_hook() {
 
 function start() {
     echo "Starting Sahara cartridge" >> ${OPENSHIFT_SP_LOG}
-    createCluster "$OPENSHIFT_REPO_DIR/cluster/config.properties"
-    
+    createCluster "$OPENSHIFT_REPO_DIRcluster/config.properties"
+
     if [ -f ${OPENSHIFT_REPO_DIR}/cluster.cfg ]
     then
         source ${OPENSHIFT_REPO_DIR}/cluster.cfg
@@ -29,7 +29,7 @@ function start() {
 
 function deploy(){
     echo "Deploying with Sahara" >> ${OPENSHIFT_SP_LOG}
-    createCluster "$OPENSHIFT_REPO_DIR/cluster/config.properties"
+    createCluster "$OPENSHIFT_REPO_DIRcluster/config.properties"
 
 #    curl -H "Content-Type: application/json"  \
 #            -X POST \
