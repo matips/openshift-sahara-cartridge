@@ -7,7 +7,7 @@ source ../cluster/config.properties
 source ../bin/operations
 
 client_message "Sahara url: $SAHARA_URL/$TENANT_ID"
-client_message "Logfile: $OPENSHIFT_SP_LOG"
+client_message "Logfile: $(OPENSHIFT_DIY_LOG)"
 client_message "Workdir: $OPENSHIFT_SP_DIR"
 client_message "Openstack Auth url: $OPENSTACK_AUTH_URL"
 client_message "Openstack url: $OPENSTACK_URL"
@@ -17,8 +17,8 @@ echo "Sahara url: $SAHARA_URL/$TENANT_ID" >> OPENSHIFT_DIY_LOG
 echo "Create node group template url: $SAHARA_URL/$TENANT_ID"/node-group-templates >> OPENSHIFT_DIY_LOG
 echo "Auth url: $OPENSTACK_AUTH_URL" >> OPENSHIFT_DIY_LOG
 
-mkdir -p ${OPENSHIFT_DIY_DIR}run
-mkdir -p ${OPENSHIFT_DIY_DIR}temp
+mkdir -p ${OPENSHIFT_SP_DIR}run
+mkdir -p ${OPENSHIFT_SP_DIR}temp
 
 
 authenticate
