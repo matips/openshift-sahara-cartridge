@@ -62,6 +62,7 @@ function createClusterTemplate(){
 }
 
 function createCluster(){
+    source $1
     authenticate
 
     cat ${OPENSHIFT_SP_DIR}cluster/json/launch_cluster.json | \
