@@ -6,7 +6,7 @@ source $OPENSHIFT_CARTRIDGE_SDK_BASH
 source ../cluster/config.properties
 source ../bin/operations
 
-OPENSHIFT_SP_LOG=${$OPENSHIFT_LOG_DIR}sahara
+OPENSHIFT_SP_LOG=${OPENSHIFT_LOG_DIR}sahara
 
 client_message "Sahara url: $SAHARA_URL/$TENANT_ID"
 client_message "Logfile: $OPENSHIFT_SP_LOG"
