@@ -98,6 +98,22 @@ function createCluster(){
     then
         echo "Cluster already exists" >> ${OPENSHIFT_SP_LOG}
         client_message "Cluster already exists"
+
+        curl -s -X GET "$SAHARA_URL/clusters" \
+                        -H "Content-Type: application/json" \
+                        -H "X-Auth-Token: ${OPENSTACK_TOKEN}" \
+                        > "${OPENSHIFT_SP_DIR}"/temp/response_list_clusters.json
+
+        SPARK_CLUSTER_ID=`cat ${OPENSHIFT_SP_DIR}temp/response_list_clusters.json |
+                ./bin/jq '.clusters' |
+                ./bin/jq 'map(select(.name=="mp-cluster-36"))[0].id'`
+
+        SPARK_CLUSTER_ID=`cat ${OPENSHIFT_SP_DIR}temp/response_list_clusters.json |
+                ./bin/jq '.clusters' |
+                ./bin/jq 'map(select(.name=="mp-cluster-36"))[0].id'`
+
+        client_message "Existing cluster ID: ${SPARK_CLUSTER_ID}"
+
     else
         SPARK_CLUSTER_ID=`cat ${OPENSHIFT_SP_DIR}temp/response_launch_cluster.json | ${OPENSHIFT_SP_DIR}bin/jq -r '.cluster.id'`
         client_message "Created cluster ID: ${SPARK_CLUSTER_ID}"
