@@ -117,7 +117,7 @@ function getClusterIdByName(){
 
 }
 
-function createJob(){
+function deployJob(){
         if [ ! -z "$1"  -a -f "$1" ]
         then
             source $1
@@ -184,6 +184,8 @@ function createJob(){
                 createJobBinary
             fi
 
+            runJob
+
         else
            client_message "File $JOB_BINARY does not exist."
         fi
@@ -236,7 +238,65 @@ function createJobBinary() {
 
            client_message "Created job binary id: ${JOB_BINARY_ID}"
 }
+function createJob() {
 
+            client_message "Creating job..."
+            cat ${OPENSHIFT_SP_DIR}cluster/json/job.json | \
+                ${JQ} ".libs = [\"${JOB_INTERNAL_ID}\"]" | \
+                ${JQ} ".type = \"${JOB_TYPE}\"" | \
+                ${JQ} ".name = \"${JOB_NAME}-${JOB_INTERNAL_ID}-${RAND}-$(date +%Y-%m-%d:%H:%M:%S)\"" \
+                > "${OPENSHIFT_SP_DIR}"/tmp/job_resolved.json
+
+            curl -s -X POST "$SAHARA_URL/jobs" \
+                         -H "Content-Type: application/json" \
+                         -H "X-Auth-Token: ${OPENSTACK_TOKEN}" \
+                         -d @"${OPENSHIFT_SP_DIR}"/tmp/job_resolved.json \
+                         > "${OPENSHIFT_SP_DIR}"/tmp/job_response.json
+
+           check_json_errors job_response "creating job"
+
+           JOB_ID=`cat "${OPENSHIFT_SP_DIR}"/tmp/job_response.json | ${JQ} -r '.job.id'`
+
+           client_message "Created job with id: ${JOB_ID}"
+}
+
+function runJob() {
+    client_message "Runngin job with id: ${JOB_ID} and type ${JOB_TYPE}"
+    case ${JOB_TYPE} in
+        jar )
+            runJavaJob ;;
+    esac
+}
+function runJavaJob() {
+
+            client_message "Running java job..."
+            cat ${OPENSHIFT_SP_DIR}cluster/json/job_execution_java.json | \
+                ${JQ} ".cluster_id = [\"${SPARK_CLUSTER_ID}\"]" | \
+                ${JQ} ".job_configs.configs.\"fs.swift.service.sahara.username\" = \"${fs_swift_service_sahara_username}\"" | \
+                ${JQ} ".job_configs.configs.\"fs.swift.service.sahara.password\" = \"${fs_swift_service_sahara_password}\"" | \
+                ${JQ} ".job_configs.configs.\"edp.java.main_class\" = \"${edp_java_main_class}\"" \
+                > "${OPENSHIFT_SP_DIR}"/tmp/run_job_resolved.json
+
+            for ARG in $JOB_ARGS
+            do
+                cat ${OPENSHIFT_SP_DIR}cluster/json/run_job_resolved.json | \
+                    ${JQ} ".args += [\"${ARG}\"]" \
+                    > "${OPENSHIFT_SP_DIR}"/tmp/run_job_resolved.json
+            done
+
+            curl -s -X POST "$SAHARA_URL/jobs" \
+                         -H "Content-Type: application/json" \
+                         -H "X-Auth-Token: ${OPENSTACK_TOKEN}" \
+                         -d @"${OPENSHIFT_SP_DIR}"/tmp/run_job_resolved.json \
+                         > "${OPENSHIFT_SP_DIR}"/tmp/run_job_response.json
+
+           check_json_errors run_job_response "running job"
+
+           JOB_ID=`cat "${OPENSHIFT_SP_DIR}"/tmp/run_job_response.json | ${JQ} -r '.job.id'`
+
+           client_message "Job started with id: ${JOB_ID}"
+
+}
 function createJobInternal() {
    client_message "File $JOB_BINARY exists."
    local NAME=$(basename $JOB_BINARY)

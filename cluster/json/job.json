@@ -1,7 +1,7 @@
 {
     "description": "This is job created by sahara cartridge for OpenShift",
-    "mains": ["..."],
+    "mains": [],
     "libs": [],
-    "type": "jar",
-    "name": "jar-job-example"
+    "type": "...",
+    "name": "..."
 }

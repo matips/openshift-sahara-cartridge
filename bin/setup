@@ -27,6 +27,6 @@ authenticate
 #createSlaveNodeGroup
 #createClusterTemplate
 createCluster
-createJob
+deployJob
 
 exit 0
