@@ -243,7 +243,7 @@ function createJob() {
 
             client_message "Creating job..."
             cat ${OPENSHIFT_SP_DIR}cluster/json/job.json | \
-                ${JQ} ".libs = [\"${JOB_INTERNAL_ID}\"]" | \
+                ${JQ} ".libs = [\"${JOB_BINARY_ID}\"]" | \
                 ${JQ} ".type = \"${JOB_TYPE}\"" | \
                 ${JQ} ".name = \"${JOB_NAME}-${RANDOM}-$(date +%Y-%m-%d-%H-%M-%S)\"" \
                 > "${OPENSHIFT_SP_DIR}"/tmp/job_resolved.json
