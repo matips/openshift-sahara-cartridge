@@ -254,13 +254,13 @@ function runJavaJob() {
 
             cat ${OPENSHIFT_SP_DIR}tmp/run_job_resolved.json | ${JQ} -c "."
 
-            curl -s -X PUT "$SAHARA_URL/jobs" \
+            curl -s -X POST "$SAHARA_URL/jobs/${JOB_ID}/execute" \
                          -H "Content-Type: application/json" \
                          -H "X-Auth-Token: ${OPENSTACK_TOKEN}" \
                          -d @"${OPENSHIFT_SP_DIR}"/tmp/run_job_resolved.json \
                          > "${OPENSHIFT_SP_DIR}"/tmp/run_job_response.json
 
-           check_json_errors run_job_response "running job"
+           check_json_errors run_job_response "running java job"
 
            JOB_ID=`cat "${OPENSHIFT_SP_DIR}"/tmp/run_job_response.json | ${JQ} -r '.job.id'`
 
