@@ -239,7 +239,7 @@ function runJavaJob() {
 
             client_message "Running java job..."
             cat ${OPENSHIFT_SP_DIR}cluster/json/job_execution_java.json | \
-                ${JQ} ".cluster_id = [\"${SPARK_CLUSTER_ID}\"]" | \
+                ${JQ} ".cluster_id = \"${SPARK_CLUSTER_ID}\"" | \
                 ${JQ} ".job_configs.configs.\"fs.swift.service.sahara.username\" = \"${fs_swift_service_sahara_username}\"" | \
                 ${JQ} ".job_configs.configs.\"fs.swift.service.sahara.password\" = \"${fs_swift_service_sahara_password}\"" | \
                 ${JQ} ".job_configs.configs.\"edp.java.main_class\" = \"${edp_java_main_class}\"" \
