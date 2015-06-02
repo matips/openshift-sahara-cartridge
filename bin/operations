@@ -130,31 +130,6 @@ function deployJob(){
         then
             createJobInternal
 
-            if [ ${ERROR} == 'DB_DUPLICATE_ENTRY' ]
-            then
-                curl -s -X GET "$SAHARA_URL/job-binary-internals" \
-                            -H "X-Auth-Token: ${OPENSTACK_TOKEN}" \
-                            > "${OPENSHIFT_SP_DIR}"/tmp/create_job_binary_internals_list.json
-
-
-                JOB_INTERNAL_BINARY_ID=`cat ${OPENSHIFT_SP_DIR}tmp/create_job_binary_internals_list.json |
-                        ${OPENSHIFT_SP_DIR}/bin/jq '.binaries' |
-                        ${OPENSHIFT_SP_DIR}/bin/jq "map(select(.name==\"$(basename $JOB_BINARY)\"))[0].id" |
-                        cut -d "\"" -f2`
-
-                client_message "Searched JOB_INTERNAL_BINARY_ID=${JOB_INTERNAL_BINARY_ID}"
-
-
-                curl -s -X DELETE  "${SAHARA_URL}/job-binary-internals/${JOB_INTERNAL_BINARY_ID}" \
-                            -H "X-Auth-Token: ${OPENSTACK_TOKEN}" \
-                            -w "%{http_code}" \
-                            > "${OPENSHIFT_SP_DIR}"/tmp/create_job_binary_delete_result.txt
-
-                client_message "Job internal binary id deleting result: $(cat "${OPENSHIFT_SP_DIR}"/tmp/create_job_binary_delete_result.txt)"
-                client_message "creating job internal binary again..."
-
-                createJobInternal
-            fi
 
             createJobBinary
 
@@ -302,13 +277,13 @@ function runJavaJob() {
 }
 function createJobInternal() {
    client_message "File $JOB_BINARY exists."
-   local NAME=$(basename $JOB_BINARY)
-   client_message "File name of job binary is '${NAME}'."
-   rawurlencode $NAME
-   JOB_INTERNAL_NAME=$REPLY
-   client_message "File name will be encoded as '$JOB_INTERNAL_NAME'"
+   JOB_INTERNAL_NAME="$(basename $JOB_BINARY)-$(cat $JOB_BINARY | md5sum | /bin/cut -f1 -d" ")"
+   client_message "File name of job binary is '${JOB_INTERNAL_NAME}'."
 
-   curl -s -X PUT "$SAHARA_URL/job-binary-internals/$JOB_INTERNAL_NAME" \
+   rawurlencode "$JOB_INTERNAL_NAME-$(cat $JOB_BINARY | md5sum | /bin/cut -f1 -d" ")"
+   client_message "File name will be encoded as '$REPLY'"
+
+   curl -s -X PUT "$SAHARA_URL/job-binary-internals/$REPLY" \
                  -H "X-Auth-Token: ${OPENSTACK_TOKEN}" \
                  -d @"$JOB_BINARY" \
                  > "${OPENSHIFT_SP_DIR}"/tmp/response_create_job_binary_internals.json
@@ -318,4 +293,20 @@ function createJobInternal() {
    JOB_INTERNAL_ID=`cat "${OPENSHIFT_SP_DIR}"/tmp/response_create_job_binary_internals.json | ${JQ} -r '.job_binary_internal.id'`
 
    client_message "Created job binary internal id: ${JOB_INTERNAL_ID}"
+
+
+    if [ ${ERROR} == 'DB_DUPLICATE_ENTRY' ]
+    then
+        curl -s -X GET "$SAHARA_URL/job-binary-internals" \
+                    -H "X-Auth-Token: ${OPENSTACK_TOKEN}" \
+                    > "${OPENSHIFT_SP_DIR}"/tmp/create_job_binary_internals_list.json
+
+
+        JOB_INTERNAL_ID=`cat ${OPENSHIFT_SP_DIR}tmp/create_job_binary_internals_list.json |
+                ${OPENSHIFT_SP_DIR}/bin/jq '.binaries' |
+                ${OPENSHIFT_SP_DIR}/bin/jq "map(select(.name==\"${JOB_INTERNAL_NAME}\"))[0].id" |
+                cut -d "\"" -f2`
+
+        client_message "Searched JOB_INTERNAL_BINARY_ID=${JOB_INTERNAL_ID}"s
+    fi
 }
