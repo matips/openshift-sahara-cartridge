@@ -245,7 +245,7 @@ function createJob() {
             cat ${OPENSHIFT_SP_DIR}cluster/json/job.json | \
                 ${JQ} ".libs = [\"${JOB_INTERNAL_ID}\"]" | \
                 ${JQ} ".type = \"${JOB_TYPE}\"" | \
-                ${JQ} ".name = \"${JOB_NAME}-${JOB_INTERNAL_ID}-${RAND}-$(date +%Y-%m-%d:%H:%M:%S)\"" \
+                ${JQ} ".name = \"${JOB_NAME}-${RANDOM}-$(date +%Y-%m-%d:%H:%M:%S)\"" \
                 > "${OPENSHIFT_SP_DIR}"/tmp/job_resolved.json
 
             curl -s -X POST "$SAHARA_URL/jobs" \
@@ -280,7 +280,7 @@ function runJavaJob() {
 
             for ARG in $JOB_ARGS
             do
-                cat ${OPENSHIFT_SP_DIR}cluster/json/run_job_resolved.json | \
+                cat ${OPENSHIFT_SP_DIR}tmp/run_job_resolved.json | \
                     ${JQ} ".args += [\"${ARG}\"]" \
                     > "${OPENSHIFT_SP_DIR}"/tmp/run_job_resolved.json
             done
