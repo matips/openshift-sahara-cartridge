@@ -20,12 +20,13 @@ echo "Create node group template url: $SAHARA_URL"/node-group-templates >> ${OPE
 echo "Auth url: $OPENSTACK_AUTH_URL" >> ${OPENSHIFT_SP_LOG}
 
 mkdir -p ${OPENSHIFT_SP_DIR}run
-mkdir -p ${OPENSHIFT_SP_DIR}temp
+mkdir -p ${OPENSHIFT_SP_DIR}tmp
 
 authenticate
 #createMasterNodeGroup
 #createSlaveNodeGroup
 #createClusterTemplate
-#createCluster
+createCluster
+createJob
 
 exit 0

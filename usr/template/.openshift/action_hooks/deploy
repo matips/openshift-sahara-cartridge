@@ -2,6 +2,8 @@
 
 cd -P "$(dirname $0)"
 
+client_message "Deploying sahara (action_hooks=deply)..."
+
 source $OPENSHIFT_CARTRIDGE_SDK_BASH
 
 if [ -f ${OPENSHIFT_REPO_DIR}/cluster.cfg ]

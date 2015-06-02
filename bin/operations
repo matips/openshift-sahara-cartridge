@@ -1,63 +1,59 @@
 #!/bin/sh
 source ../cluster/config.properties
-
+JQ="${OPENSHIFT_SP_DIR}/bin/jq"
 function authenticate(){
     client_message "Your token is: $OPENSTACK_TOKEN"
     curl -s -X POST "$OPENSTACK_AUTH_URL"/tokens \
                     -H "Content-Type: application/json" \
                     -d @"${OPENSHIFT_SP_DIR}"cluster/json/authenticate.json \
-                    > "${OPENSHIFT_SP_DIR}"temp/response_authenticate.json
+                    > "${OPENSHIFT_SP_DIR}"tmp/response_authenticate.json
 
     # parse response and save token to appropriate variable
-    TOKEN=`cat ${OPENSHIFT_SP_DIR}temp/response_authenticate.json | ${OPENSHIFT_SP_DIR}bin/jq -r '.access.token.id'`
+    TOKEN=`cat ${OPENSHIFT_SP_DIR}tmp/response_authenticate.json | ${JQ} -r '.access.token.id'`
     client_message "Your token is: $TOKEN"
     OPENSTACK_TOKEN=${TOKEN}
     echo "Token is saved in OPENSTACK_TOKEN env variable: $OPENSTACK_TOKEN" >> ${OPENSHIFT_SP_LOG}
-}
-
-function createMasterNodeGroup(){
-
-    curl -s -X POST "$SAHARA_URL/node-group-templates" \
-                    -H "Content-Type: application/json" \
-                    -H "X-Auth-Token: $TOKEN" \
-                    -d @"${OPENSHIFT_SP_DIR}"/cluster/json/ng-master.json \
-                    > "${OPENSHIFT_SP_DIR}"/temp/response_ng-master.json
-
-    SPARK_TEMPLATE_MASTER_ID=`cat ${OPENSHIFT_SP_DIR}temp/response_ng-master.json | ${OPENSHIFT_SP_DIR}bin/jq -r '.node_group_template.id'`
-
-    echo "Master node template id: $SPARK_TEMPLATE_MASTER_ID" >> ${OPENSHIFT_SP_LOG}
-}
-
-function createSlaveNodeGroup(){
-    curl -s -X POST "$SAHARA_URL/node-group-templates" \
-                    -H "Content-Type: application/json" \
-                    -H "X-Auth-Token: ${OPENSTACK_TOKEN}" \
-                    -d @"${OPENSHIFT_SP_DIR}"/cluster/json/ng-slave.json \
-                    > "${OPENSHIFT_SP_DIR}"/temp/response_ng-slave.json
-
-    SPARK_TEMPLATE_SLAVE_ID=`cat ${OPENSHIFT_SP_DIR}temp/response_ng-slave.json | ${OPENSHIFT_SP_DIR}bin/jq -r '.node_group_template.id'`
-
-    echo "Slave node template id: $SPARK_TEMPLATE_SLAVE_ID" >> ${OPENSHIFT_SP_LOG}
 }
 
 function createClusterTemplate(){
     authenticate
 
     cat  "${OPENSHIFT_SP_DIR}"/cluster/json/cluster_basic.json | \
-               ${OPENSHIFT_SP_DIR}bin/jq ".node_groups[0].node_group_template_id = \"${SPARK_TEMPLATE_MASTER_ID}\"" | \
-               ${OPENSHIFT_SP_DIR}bin/jq ".node_groups[1].node_group_template_id = \"${SPARK_TEMPLATE_SLAVE_ID}\"" | \
-               ${OPENSHIFT_SP_DIR}bin/jq ".node_groups[1].count = \"${WORKERS_COUNT}\"" \
-               > ${OPENSHIFT_SP_DIR}/temp/cluster_basic_resolved.json
+               ${JQ} ".node_groups[0].node_group_template_id = \"${SPARK_TEMPLATE_MASTER_ID}\"" | \
+               ${JQ} ".node_groups[1].node_group_template_id = \"${SPARK_TEMPLATE_SLAVE_ID}\"" | \
+               ${JQ} ".node_groups[1].count = \"${WORKERS_COUNT}\"" \
+               > ${OPENSHIFT_SP_DIR}/tmp/cluster_basic_resolved.json
 
     curl -s -X POST "$SAHARA_URL/cluster-templates" \
                     -H "Content-Type: application/json" \
                     -H "X-Auth-Token: ${OPENSTACK_TOKEN}" \
-                    -d @"${OPENSHIFT_SP_DIR}"/temp/cluster_basic_resolved.json \
-                    > "${OPENSHIFT_SP_DIR}"/temp/response_cluster_basic.json
+                    -d @"${OPENSHIFT_SP_DIR}"/tmp/cluster_basic_resolved.json \
+                    > "${OPENSHIFT_SP_DIR}"/tmp/response_cluster_basic.json
 
-    SPARK_CLUSTER_TEMPLATE_ID=`cat ${OPENSHIFT_SP_DIR}temp/response_cluster_basic.json | ${OPENSHIFT_SP_DIR}bin/jq -r '.cluster_template.id'`
+    SPARK_CLUSTER_TEMPLATE_ID=`cat ${OPENSHIFT_SP_DIR}tmp/response_cluster_basic.json | ${JQ} -r '.cluster_template.id'`
 
     echo "Cluster template id: $SPARK_CLUSTER_TEMPLATE_ID" >> ${OPENSHIFT_SP_LOG}
+}
+function deleteCluster(){
+    if [ ! -z "$1"  -a -f "$1" ]
+    then
+        source $1
+    fi
+
+    authenticate
+
+    getClusterIdByName
+
+    client_message "Deleting cluster with id: $SPARK_CLUSTER_ID"
+
+    curl -s -X DELETE "$SAHARA_URL/clusters/$SPARK_CLUSTER_ID"  \
+                    -H "X-Auth-Token: ${OPENSTACK_TOKEN}" \
+                    -w "%{http_code}" \
+                    > "${OPENSHIFT_SP_DIR}"/tmp/response_delete_cluster.code
+
+    DELETE_RESPONSE_CODE=`cat "${OPENSHIFT_SP_DIR}"/tmp/response_delete_cluster.code`
+    client_message "Cluster with id: $SPARK_CLUSTER_ID removed with code $DELETE_RESPONSE_CODE"
+    echo "Cluster with id: $SPARK_CLUSTER_ID removed with code $DELETE_RESPONSE_CODE"  >> ${OPENSHIFT_SP_LOG}
 }
 
 function createCluster(){
@@ -69,11 +65,12 @@ function createCluster(){
     authenticate
 
     cat ${OPENSHIFT_SP_DIR}cluster/json/launch_cluster.json | \
-                ${OPENSHIFT_SP_DIR}bin/jq ".cluster_template_id = \"${SPARK_CLUSTER_TEMPLATE_ID}\"" | \
-                ${OPENSHIFT_SP_DIR}bin/jq ".name = \"${SPARK_CLUSTER_NAME}\"" \
-                > "${OPENSHIFT_SP_DIR}"/temp/launch_cluster_resolved.json
+                ${JQ} ".cluster_template_id = \"${SPARK_CLUSTER_TEMPLATE_ID}\"" | \
+                ${JQ} ".user_keypair_id = \"${USER_KEY_PAIR}\"" | \
+                ${JQ} ".name = \"${SPARK_USER_KEY_PAIR}\"" \
+                > "${OPENSHIFT_SP_DIR}"/tmp/launch_cluster_resolved.json
 
-    echo `cat "${OPENSHIFT_SP_DIR}"/temp/launch_cluster_resolved.json`  >> ${OPENSHIFT_SP_LOG}
+    echo `cat "${OPENSHIFT_SP_DIR}"/tmp/launch_cluster_resolved.json`  >> ${OPENSHIFT_SP_LOG}
 
     client_message "Creating cluster from template: ${SPARK_CLUSTER_TEMPLATE_ID}"
     client_message "Cluster name: ${SPARK_CLUSTER_NAME}"
@@ -81,13 +78,13 @@ function createCluster(){
     curl -s -X POST "$SAHARA_URL/clusters" \
                     -H "Content-Type: application/json" \
                     -H "X-Auth-Token: ${OPENSTACK_TOKEN}" \
-                    -d @"${OPENSHIFT_SP_DIR}"/temp/launch_cluster_resolved.json \
-                    > "${OPENSHIFT_SP_DIR}"/temp/response_launch_cluster.json
+                    -d @"${OPENSHIFT_SP_DIR}"/tmp/launch_cluster_resolved.json \
+                    > "${OPENSHIFT_SP_DIR}"/tmp/response_launch_cluster.json
 
-    echo `cat "${OPENSHIFT_SP_DIR}"/temp/response_launch_cluster.json`  >> ${OPENSHIFT_SP_LOG}
+    echo `cat "${OPENSHIFT_SP_DIR}"/tmp/response_launch_cluster.json`  >> ${OPENSHIFT_SP_LOG}
 
-    ERROR=`cat ${OPENSHIFT_SP_DIR}temp/response_launch_cluster.json | ${OPENSHIFT_SP_DIR}bin/jq -r '.error_name?'`
-    ERROR_MESSAGE=`cat ${OPENSHIFT_SP_DIR}temp/response_launch_cluster.json | ${OPENSHIFT_SP_DIR}bin/jq -r '.error_message?'`
+    ERROR=`cat ${OPENSHIFT_SP_DIR}tmp/response_launch_cluster.json | ${JQ} -r '.error_name?'`
+    ERROR_MESSAGE=`cat ${OPENSHIFT_SP_DIR}tmp/response_launch_cluster.json | ${JQ} -r '.error_message?'`
 
     if [ ${ERROR} != 'null' ]
     then
@@ -99,25 +96,89 @@ function createCluster(){
         echo "Cluster already exists" >> ${OPENSHIFT_SP_LOG}
         client_message "Cluster already exists"
 
-        curl -s -X GET "$SAHARA_URL/clusters" \
-                        -H "Content-Type: application/json" \
-                        -H "X-Auth-Token: ${OPENSTACK_TOKEN}" \
-                        > "${OPENSHIFT_SP_DIR}"/temp/response_list_clusters.json
-
-        SPARK_CLUSTER_ID=`cat ${OPENSHIFT_SP_DIR}temp/response_list_clusters.json |
-                ${OPENSHIFT_SP_DIR}/bin/jq '.clusters' |
-                ${OPENSHIFT_SP_DIR}/bin/jq 'map(select(.name=="mp-cluster-36"))[0].id' |
-                cut -d "\"" -f2`
-
+        getClusterIdByName
 
         client_message "Existing cluster ID: ${SPARK_CLUSTER_ID}"
 
     else
-        SPARK_CLUSTER_ID=`cat ${OPENSHIFT_SP_DIR}temp/response_launch_cluster.json | ${OPENSHIFT_SP_DIR}bin/jq -r '.cluster.id'`
+        SPARK_CLUSTER_ID=`cat ${OPENSHIFT_SP_DIR}tmp/response_launch_cluster.json | ${JQ} -r '.cluster.id'`
         client_message "Created cluster ID: ${SPARK_CLUSTER_ID}"
     fi
 
-    echo $SPARK_MANAGEMENT_KEY > ${OPENSHIFT_SP_DIR}temp/SPARK_MANAGEMENT_KEY
+    echo $SPARK_MANAGEMENT_KEY > ${OPENSHIFT_SP_DIR}tmp/SPARK_MANAGEMENT_KEY
 
     echo "Cluster id: $SPARK_CLUSTER_ID" >> ${OPENSHIFT_SP_LOG}
+}
+
+function getClusterIdByName(){
+
+        curl -s -X GET "$SAHARA_URL/clusters" \
+                        -H "Content-Type: application/json" \
+                        -H "X-Auth-Token: ${OPENSTACK_TOKEN}" \
+                        > "${OPENSHIFT_SP_DIR}"/tmp/response_list_clusters.json
+
+        SPARK_CLUSTER_ID=`cat ${OPENSHIFT_SP_DIR}tmp/response_list_clusters.json |
+                ${OPENSHIFT_SP_DIR}/bin/jq '.clusters' |
+                ${OPENSHIFT_SP_DIR}/bin/jq "map(select(.name==\"${SPARK_CLUSTER_NAME}\"))[0].id" |
+                cut -d "\"" -f2`
+
+}
+
+function createJob(){
+        authenticate
+
+
+        if [ -f $JOB_BINARY ];
+        then
+
+           user_message "File $JOB_BINARY exists."
+           local NAME=$(basename $JOB_BINARY)
+           user_message "File name of job binary is ${NAME}."
+           rawurlencode $NAME
+           user_message "File name will be encoded as $REPLY"
+
+           curl -s -X PUT "$SAHARA_URL/job-binary-internals/$REPLY" \
+                         -H "X-Auth-Token: ${OPENSTACK_TOKEN}" \
+                         -d "$JOB_BINARY" \
+                         > "${OPENSHIFT_SP_DIR}"/tmp/response_create_job_binary_internals.json
+           JOB_INTERNAL_ID=`cat "${OPENSHIFT_SP_DIR}"/tmp/response_create_job_binary_internals.json | ${JQ} -r '.job_binary_internal.id'`
+           user_message "Created job binary internal id: ${JOB_INTERNAL_ID}"
+
+
+           user_message "Creating job binary..."
+           cat ${OPENSHIFT_SP_DIR}cluster/json/job_binary.json | \
+                ${JQ} ".url = \"internal-db://${JOB_INTERNAL_ID}\"" | \
+                ${JQ} ".name = \"${NAME}\"" | \
+                > "${OPENSHIFT_SP_DIR}"/tmp/job_binary_resolved.json
+
+           curl -s -X POST "$SAHARA_URL/job-binaries" \
+                         -H "Content-Type: application/json" \
+                         -H "X-Auth-Token: ${OPENSTACK_TOKEN}" \
+                         -d @"${OPENSHIFT_SP_DIR}"/tmp/job_binary_resolved.json \
+                         > "${OPENSHIFT_SP_DIR}"/tmp/job_binary_response.json
+
+           JOB_BINARY_ID=`cat "${OPENSHIFT_SP_DIR}"/tmp/job_binary_response.json | ${JQ} -r '.job_binary.id'`
+
+           user_message "Created job binary id: ${JOB_BINARY_ID}"
+
+        else
+           user_message "File $JOB_BINARY does not exist."
+        fi
+}
+
+rawurlencode() {
+  local string="${1}"
+  local strlen=${#string}
+  local encoded=""
+
+  for (( pos=0 ; pos<strlen ; pos++ )); do
+     c=${string:$pos:1}
+     case "$c" in
+        [-_.~a-zA-Z0-9] ) o="${c}" ;;
+        * )               printf -v o '%%%02x' "'$c"
+     esac
+     encoded+="${o}"
+  done
+  #echo "${encoded}"    # You can either set a return variable (FASTER)
+  REPLY="${encoded}"   #+or echo the result (EASIER)... or both... :p
 }
