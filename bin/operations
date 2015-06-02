@@ -129,21 +129,21 @@ function createJob(){
 
         if [ -f $JOB_BINARY ];
         then
-           user_message "File $JOB_BINARY exists."
+           client_message "File $JOB_BINARY exists."
            local NAME=$(basename $JOB_BINARY)
-           user_message "File name of job binary is ${NAME}."
+           client_message "File name of job binary is ${NAME}."
            rawurlencode $NAME
-           user_message "File name will be encoded as $REPLY"
+           client_message "File name will be encoded as $REPLY"
 
            curl -s -X PUT "$SAHARA_URL/job-binary-internals/$REPLY" \
                          -H "X-Auth-Token: ${OPENSTACK_TOKEN}" \
                          -d "$JOB_BINARY" \
                          > "${OPENSHIFT_SP_DIR}"/tmp/response_create_job_binary_internals.json
            JOB_INTERNAL_ID=`cat "${OPENSHIFT_SP_DIR}"/tmp/response_create_job_binary_internals.json | ${JQ} -r '.job_binary_internal.id'`
-           user_message "Created job binary internal id: ${JOB_INTERNAL_ID}"
+           client_message "Created job binary internal id: ${JOB_INTERNAL_ID}"
 
 
-           user_message "Creating job binary..."
+           client_message "Creating job binary..."
            cat ${OPENSHIFT_SP_DIR}cluster/json/job_binary.json | \
                 ${JQ} ".url = \"internal-db://${JOB_INTERNAL_ID}\"" | \
                 ${JQ} ".name = \"${NAME}\"" | \
@@ -157,10 +157,10 @@ function createJob(){
 
            JOB_BINARY_ID=`cat "${OPENSHIFT_SP_DIR}"/tmp/job_binary_response.json | ${JQ} -r '.job_binary.id'`
 
-           user_message "Created job binary id: ${JOB_BINARY_ID}"
+           client_message "Created job binary id: ${JOB_BINARY_ID}"
 
         else
-           user_message "File $JOB_BINARY does not exist."
+           client_message "File $JOB_BINARY does not exist."
         fi
 }
 
