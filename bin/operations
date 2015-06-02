@@ -82,13 +82,7 @@ function createCluster(){
 
     echo `cat "${OPENSHIFT_SP_DIR}"/tmp/response_launch_cluster.json`  >> ${OPENSHIFT_SP_LOG}
 
-    ERROR=`cat ${OPENSHIFT_SP_DIR}tmp/response_launch_cluster.json | ${JQ} -r '.error_name?'`
-    ERROR_MESSAGE=`cat ${OPENSHIFT_SP_DIR}tmp/response_launch_cluster.json | ${JQ} -r '.error_message?'`
-
-    if [ ${ERROR} != 'null' ]
-    then
-        client_message "Error when crating cluster: ${ERROR_MESSAGE}"
-    fi
+    check_json_errors response_launch_cluster.json
 
     if [ ${ERROR} == 'NAME_ALREADY_EXISTS' ]
     then
@@ -136,14 +130,17 @@ function createJob(){
         then
            client_message "File $JOB_BINARY exists."
            local NAME=$(basename $JOB_BINARY)
-           client_message "File name of job binary is ${NAME}."
+           client_message "File name of job binary is '${NAME}'."
            rawurlencode $NAME
-           client_message "File name will be encoded as $REPLY"
+           client_message "File name will be encoded as '$REPLY'"
 
            curl -s -X PUT "$SAHARA_URL/job-binary-internals/$REPLY" \
                          -H "X-Auth-Token: ${OPENSTACK_TOKEN}" \
                          -d "$JOB_BINARY" \
                          > "${OPENSHIFT_SP_DIR}"/tmp/response_create_job_binary_internals.json
+
+
+           check_json_errors response_create_job_binary_internals.json
            JOB_INTERNAL_ID=`cat "${OPENSHIFT_SP_DIR}"/tmp/response_create_job_binary_internals.json | ${JQ} -r '.job_binary_internal.id'`
            client_message "Created job binary internal id: ${JOB_INTERNAL_ID}"
 
@@ -159,6 +156,8 @@ function createJob(){
                          -H "X-Auth-Token: ${OPENSTACK_TOKEN}" \
                          -d @"${OPENSHIFT_SP_DIR}"/tmp/job_binary_resolved.json \
                          > "${OPENSHIFT_SP_DIR}"/tmp/job_binary_response.json
+
+           check_json_errors job_binary_response.json
 
            JOB_BINARY_ID=`cat "${OPENSHIFT_SP_DIR}"/tmp/job_binary_response.json | ${JQ} -r '.job_binary.id'`
 
@@ -184,4 +183,15 @@ rawurlencode() {
   done
   #echo "${encoded}"    # You can either set a return variable (FASTER)
   REPLY="${encoded}"   #+or echo the result (EASIER)... or both... :p
+}
+
+function check_json_errors() {
+
+    ERROR=`cat ${OPENSHIFT_SP_DIR}tmp/${1}.json | ${JQ} -r '.error_name?'`
+    ERROR_MESSAGE=`cat ${OPENSHIFT_SP_DIR}tmp/${1}.json | ${JQ} -r '.error_message?'`
+
+    if [ ${ERROR} != 'null' ]
+    then
+        client_message "Error when crating cluster: ${ERROR_MESSAGE}"
+    fi
 }
