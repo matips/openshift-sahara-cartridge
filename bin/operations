@@ -299,7 +299,7 @@ function createJobInternal() {
     then
         curl -s -X GET "$SAHARA_URL/job-binary-internals" \
                     -H "X-Auth-Token: ${OPENSTACK_TOKEN}" \
-                    > "${OPENSHIFT_SP_DIR}"/tmp/job_binary_internals_list.json
+                    > "${OPENSHIFT_SP_DIR}"tmp/job_binary_internals_list.json
 
 
         JOB_INTERNAL_ID=`cat ${OPENSHIFT_SP_DIR}tmp/job_binary_internals_list.json |
