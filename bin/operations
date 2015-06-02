@@ -193,7 +193,7 @@ function createJobBinary() {
             then
                 curl -s -X GET "$SAHARA_URL/job-binaries" \
                             -H "X-Auth-Token: ${OPENSTACK_TOKEN}" \
-                            > "${OPENSHIFT_SP_DIR}"/tmp/job-binaries_list.json
+                            > "${OPENSHIFT_SP_DIR}"tmp/job-binaries_list.json
 
 
                 JOB_BINARY_ID=`cat ${OPENSHIFT_SP_DIR}tmp/job-binaries_list.json |
