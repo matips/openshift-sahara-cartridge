@@ -142,7 +142,7 @@ function createJob(){
                         ${OPENSHIFT_SP_DIR}/bin/jq "map(select(.name==\"$(basename $JOB_BINARY)\"))[0].id" |
                         cut -d "\"" -f2`
 
-                client_message "Searched JOB_INTERNAL_BINARY_ID = ${JOB_INTERNAL_BINARY_ID}"
+                client_message "Searched JOB_INTERNAL_BINARY_ID=${JOB_INTERNAL_BINARY_ID}"
 
 
                 curl -s -X DELETE  "${SAHARA_URL}/job-binary-internals/${JOB_INTERNAL_BINARY_ID}" \
@@ -160,7 +160,7 @@ function createJob(){
             client_message "Creating job binary..."
             cat ${OPENSHIFT_SP_DIR}cluster/json/job_binary.json | \
                 ${JQ} ".url = \"internal-db://${JOB_INTERNAL_ID}\"" | \
-                ${JQ} ".name = \"$(basename $JOB_BINARY)\"" | \
+                ${JQ} ".name = \"$(basename $JOB_BINARY)\"" \
                 > "${OPENSHIFT_SP_DIR}"/tmp/job_binary_resolved.json
 
             curl -s -X POST "$SAHARA_URL/job-binaries" \
