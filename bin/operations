@@ -145,8 +145,9 @@ function createJob(){
                 client_message "Searched JOB_INTERNAL_BINARY_ID = ${JOB_INTERNAL_BINARY_ID}"
 
 
-                curl -s -X -I DELETE  "${SAHARA_URL}/job-binary-internals/${JOB_INTERNAL_BINARY_ID}" \
+                curl -s -X DELETE  "${SAHARA_URL}/job-binary-internals/${JOB_INTERNAL_BINARY_ID}" \
                             -H "X-Auth-Token: ${OPENSTACK_TOKEN}" \
+                            -w "%{http_code}" \
                             > "${OPENSHIFT_SP_DIR}"/tmp/create_job_binary_delete_result.txt
 
                 client_message "Job internal binary id deleting result: $(cat "${OPENSHIFT_SP_DIR}"/tmp/create_job_binary_delete_result.txt)"
