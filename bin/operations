@@ -82,7 +82,7 @@ function createCluster(){
 
     echo `cat "${OPENSHIFT_SP_DIR}"/tmp/response_launch_cluster.json`  >> ${OPENSHIFT_SP_LOG}
 
-    check_json_errors response_launch_cluster.json
+    check_json_errors response_launch_cluster
 
     if [ ${ERROR} == 'NAME_ALREADY_EXISTS' ]
     then
@@ -140,7 +140,7 @@ function createJob(){
                          > "${OPENSHIFT_SP_DIR}"/tmp/response_create_job_binary_internals.json
 
 
-           check_json_errors response_create_job_binary_internals.json
+           check_json_errors response_create_job_binary_internals
            JOB_INTERNAL_ID=`cat "${OPENSHIFT_SP_DIR}"/tmp/response_create_job_binary_internals.json | ${JQ} -r '.job_binary_internal.id'`
            client_message "Created job binary internal id: ${JOB_INTERNAL_ID}"
 
@@ -157,7 +157,7 @@ function createJob(){
                          -d @"${OPENSHIFT_SP_DIR}"/tmp/job_binary_resolved.json \
                          > "${OPENSHIFT_SP_DIR}"/tmp/job_binary_response.json
 
-           check_json_errors job_binary_response.json
+           check_json_errors job_binary_response
 
            JOB_BINARY_ID=`cat "${OPENSHIFT_SP_DIR}"/tmp/job_binary_response.json | ${JQ} -r '.job_binary.id'`
 
