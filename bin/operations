@@ -78,7 +78,7 @@ function createCluster(){
                     -H "Content-Type: application/json" \
                     -H "X-Auth-Token: ${OPENSTACK_TOKEN}" \
                     -d @"${OPENSHIFT_SP_DIR}"/tmp/launch_cluster_resolved.json \
-                    > "${OPENSHIFT_SP_DIR}"/tmp/response_launch_cluster.json
+                        > "${OPENSHIFT_SP_DIR}"/tmp/response_launch_cluster.json
 
     echo `cat "${OPENSHIFT_SP_DIR}"/tmp/response_launch_cluster.json`  >> ${OPENSHIFT_SP_LOG}
 
