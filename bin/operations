@@ -156,24 +156,33 @@ function createJob(){
                 createJobInternal
             fi
 
+            createJobBinary
 
-            client_message "Creating job binary..."
-            cat ${OPENSHIFT_SP_DIR}cluster/json/job_binary.json | \
-                ${JQ} ".url = \"internal-db://${JOB_INTERNAL_ID}\"" | \
-                ${JQ} ".name = \"$(basename $JOB_BINARY)\"" \
-                > "${OPENSHIFT_SP_DIR}"/tmp/job_binary_resolved.json
 
-            curl -s -X POST "$SAHARA_URL/job-binaries" \
-                         -H "Content-Type: application/json" \
-                         -H "X-Auth-Token: ${OPENSTACK_TOKEN}" \
-                         -d @"${OPENSHIFT_SP_DIR}"/tmp/job_binary_resolved.json \
-                         > "${OPENSHIFT_SP_DIR}"/tmp/job_binary_response.json
+            if [ ${ERROR} == 'DB_DUPLICATE_ENTRY' ]
+            then
+                curl -s -X GET "$SAHARA_URL/job-binaries" \
+                            -H "X-Auth-Token: ${OPENSTACK_TOKEN}" \
+                            > "${OPENSHIFT_SP_DIR}"/tmp/job-binaries_list.json
 
-           check_json_errors job_binary_response "creating job-binary"
 
-           JOB_BINARY_ID=`cat "${OPENSHIFT_SP_DIR}"/tmp/job_binary_response.json | ${JQ} -r '.job_binary.id'`
+                JOB_BINARY_ID=`cat ${OPENSHIFT_SP_DIR}tmp/job-binaries_list.json |
+                        ${OPENSHIFT_SP_DIR}/bin/jq '.binaries' |
+                        ${OPENSHIFT_SP_DIR}/bin/jq "map(select(.name==\"$(basename $JOB_BINARY)\"))[0].id" |
+                        cut -d "\"" -f2`
 
-           client_message "Created job binary id: ${JOB_BINARY_ID}"
+                client_message "Searched JOB_BINARY_ID=${JOB_BINARY_ID}"
+
+
+                curl -s -X DELETE  "${SAHARA_URL}/job-binary-internals/${JOB_BINARY_ID}" \
+                            -H "X-Auth-Token: ${OPENSTACK_TOKEN}" \
+                            -w "%{http_code}" \
+                            > "${OPENSHIFT_SP_DIR}"/tmp/job_binary_internals_delete_result.txt
+
+                client_message "Deleting job binary status code: $(cat "${OPENSHIFT_SP_DIR}"/tmp/job_binary_internals_delete_result.txt)"
+                client_message "Creating job binary again..."
+                createJobBinary
+            fi
 
         else
            client_message "File $JOB_BINARY does not exist."
@@ -206,6 +215,26 @@ function check_json_errors() {
     then
         client_message "Error [${ERROR}] when ${2}: ${ERROR_MESSAGE}"
     fi
+}
+function createJobBinary() {
+
+            client_message "Creating job binary..."
+            cat ${OPENSHIFT_SP_DIR}cluster/json/job_binary.json | \
+                ${JQ} ".url = \"internal-db://${JOB_INTERNAL_ID}\"" | \
+                ${JQ} ".name = \"$(basename $JOB_BINARY)\"" \
+                > "${OPENSHIFT_SP_DIR}"/tmp/job_binary_resolved.json
+
+            curl -s -X POST "$SAHARA_URL/job-binaries" \
+                         -H "Content-Type: application/json" \
+                         -H "X-Auth-Token: ${OPENSTACK_TOKEN}" \
+                         -d @"${OPENSHIFT_SP_DIR}"/tmp/job_binary_resolved.json \
+                         > "${OPENSHIFT_SP_DIR}"/tmp/job_binary_response.json
+
+           check_json_errors job_binary_response "creating job-binary"
+
+           JOB_BINARY_ID=`cat "${OPENSHIFT_SP_DIR}"/tmp/job_binary_response.json | ${JQ} -r '.job_binary.id'`
+
+           client_message "Created job binary id: ${JOB_BINARY_ID}"
 }
 
 function createJobInternal() {
