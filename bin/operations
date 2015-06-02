@@ -280,7 +280,7 @@ function createJobInternal() {
    JOB_INTERNAL_NAME="$(basename $JOB_BINARY)-$(cat $JOB_BINARY | md5sum | /bin/cut -f1 -d" ")"
    client_message "File name of job binary is '${JOB_INTERNAL_NAME}'."
 
-   rawurlencode "$JOB_INTERNAL_NAME-$(cat $JOB_BINARY | md5sum | /bin/cut -f1 -d" ")"
+   rawurlencode "$JOB_INTERNAL_NAME"
    client_message "File name will be encoded as '$REPLY'"
 
    curl -s -X PUT "$SAHARA_URL/job-binary-internals/$REPLY" \
