@@ -131,20 +131,37 @@ function createJob(){
             createJobInternal
 
             if [ ${ERROR} == 'DB_DUPLICATE_ENTRY' ]
-
+            then
                 curl -s -X GET "$SAHARA_URL/job-binary-internals" \
                             -H "X-Auth-Token: ${OPENSTACK_TOKEN}"
-                            > "${OPENSHIFT_SP_DIR}"/tmp/response_create_job_binary_internals.json
-            then
+                            > "${OPENSHIFT_SP_DIR}"/tmp/create_job_binary_internals_list.json
 
 
-           client_message "Creating job binary..."
-           cat ${OPENSHIFT_SP_DIR}cluster/json/job_binary.json | \
+                JOB_INTERNAL_BINARY_ID=`cat ${OPENSHIFT_SP_DIR}tmp/create_job_binary_internals_list.json |
+                        ${OPENSHIFT_SP_DIR}/bin/jq '.binaries' |
+                        ${OPENSHIFT_SP_DIR}/bin/jq "map(select(.name==\"$(basename $JOB_BINARY)\"))[0].id" |
+                        cut -d "\"" -f2`
+                client_message "Searched JOB_INTERNAL_BINARY_ID = ${JOB_INTERNAL_BINARY_ID}"
+
+
+                curl -s -X GET "${SAHARA_URL}/job-binary-internals/${JOB_INTERNAL_BINARY_ID}" \
+                            -H "X-Auth-Token: ${OPENSTACK_TOKEN}"
+                            > "${OPENSHIFT_SP_DIR}"/tmp/create_job_binary_delete_result.txt
+
+                client_message "Job internal binary id deleting result: $(cat "${OPENSHIFT_SP_DIR}"/tmp/create_job_binary_delete_result.txt)"
+                client_message "creating job internal binary again..."
+
+                createJobInternal
+            fi
+
+
+            client_message "Creating job binary..."
+            cat ${OPENSHIFT_SP_DIR}cluster/json/job_binary.json | \
                 ${JQ} ".url = \"internal-db://${JOB_INTERNAL_ID}\"" | \
                 ${JQ} ".name = \"${NAME}\"" | \
                 > "${OPENSHIFT_SP_DIR}"/tmp/job_binary_resolved.json
 
-           curl -s -X POST "$SAHARA_URL/job-binaries" \
+            curl -s -X POST "$SAHARA_URL/job-binaries" \
                          -H "Content-Type: application/json" \
                          -H "X-Auth-Token: ${OPENSTACK_TOKEN}" \
                          -d @"${OPENSHIFT_SP_DIR}"/tmp/job_binary_resolved.json \

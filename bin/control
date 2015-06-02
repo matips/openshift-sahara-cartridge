@@ -22,7 +22,7 @@ function start() {
     createCluster "${OPENSHIFT_REPO_DIR}cluster/config.properties"
     createJob "${OPENSHIFT_REPO_DIR}cluster/config.properties"
 
-    if [ -f ${OPENSHIFT_REPO_DIR}/cluster.cfg ] 
+    if [ -f ${OPENSHIFT_REPO_DIR}/cluster.cfg ]
     then
         source ${OPENSHIFT_REPO_DIR}/cluster.cfg
     fi
