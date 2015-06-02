@@ -128,21 +128,14 @@ function createJob(){
 
         if [ -f $JOB_BINARY ];
         then
-           client_message "File $JOB_BINARY exists."
-           local NAME=$(basename $JOB_BINARY)
-           client_message "File name of job binary is '${NAME}'."
-           rawurlencode $NAME
-           client_message "File name will be encoded as '$REPLY'"
+            createJobInternal
 
-           curl -s -X PUT "$SAHARA_URL/job-binary-internals/$REPLY" \
-                         -H "X-Auth-Token: ${OPENSTACK_TOKEN}" \
-                         -d "$JOB_BINARY" \
-                         > "${OPENSHIFT_SP_DIR}"/tmp/response_create_job_binary_internals.json
+            if [ ${ERROR} == 'DB_DUPLICATE_ENTRY' ]
 
-
-           check_json_errors response_create_job_binary_internals "creating job binary internal"
-           JOB_INTERNAL_ID=`cat "${OPENSHIFT_SP_DIR}"/tmp/response_create_job_binary_internals.json | ${JQ} -r '.job_binary_internal.id'`
-           client_message "Created job binary internal id: ${JOB_INTERNAL_ID}"
+                curl -s -X GET "$SAHARA_URL/job-binary-internals" \
+                            -H "X-Auth-Token: ${OPENSTACK_TOKEN}"
+                            > "${OPENSHIFT_SP_DIR}"/tmp/response_create_job_binary_internals.json
+            then
 
 
            client_message "Creating job binary..."
@@ -194,4 +187,24 @@ function check_json_errors() {
     then
         client_message "Error [${ERROR}] when ${2}: ${ERROR_MESSAGE}"
     fi
+}
+
+function createJobInternal() {
+   client_message "File $JOB_BINARY exists."
+   local NAME=$(basename $JOB_BINARY)
+   client_message "File name of job binary is '${NAME}'."
+   rawurlencode $NAME
+   JOB_INTERNAL_NAME=$REPLY
+   client_message "File name will be encoded as '$JOB_INTERNAL_NAME'"
+
+   curl -s -X PUT "$SAHARA_URL/job-binary-internals/$JOB_INTERNAL_NAME" \
+                 -H "X-Auth-Token: ${OPENSTACK_TOKEN}" \
+                 -d @"$JOB_BINARY" \
+                 > "${OPENSHIFT_SP_DIR}"/tmp/response_create_job_binary_internals.json
+
+
+   check_json_errors response_create_job_binary_internals "creating job binary internal"
+   JOB_INTERNAL_ID=`cat "${OPENSHIFT_SP_DIR}"/tmp/response_create_job_binary_internals.json | ${JQ} -r '.job_binary_internal.id'`
+
+   client_message "Created job binary internal id: ${JOB_INTERNAL_ID}"
 }
