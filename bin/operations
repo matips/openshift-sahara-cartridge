@@ -65,8 +65,8 @@ function createCluster(){
 
     cat ${OPENSHIFT_SP_DIR}cluster/json/launch_cluster.json | \
                 ${JQ} ".cluster_template_id = \"${SPARK_CLUSTER_TEMPLATE_ID}\"" | \
-                ${JQ} ".user_keypair_id = \"${USER_KEY_PAIR}\"" | \
-                ${JQ} ".name = \"${SPARK_USER_KEY_PAIR}\"" \
+                ${JQ} ".user_keypair_id = \"${SPARK_USER_KEY_PAIR}\"" | \
+                ${JQ} ".name = \"${SPARK_CLUSTER_NAME}\"" \
                 > "${OPENSHIFT_SP_DIR}"/tmp/launch_cluster_resolved.json
 
     echo `cat "${OPENSHIFT_SP_DIR}"/tmp/launch_cluster_resolved.json`  >> ${OPENSHIFT_SP_LOG}
@@ -129,21 +129,21 @@ function createJob(){
 
         if [ -f $JOB_BINARY ];
         then
-           client_message "File $JOB_BINARY exists."
+           user_message "File $JOB_BINARY exists."
            local NAME=$(basename $JOB_BINARY)
-           client_message "File name of job binary is ${NAME}."
+           user_message "File name of job binary is ${NAME}."
            rawurlencode $NAME
-           client_message "File name will be encoded as $REPLY"
+           user_message "File name will be encoded as $REPLY"
 
            curl -s -X PUT "$SAHARA_URL/job-binary-internals/$REPLY" \
                          -H "X-Auth-Token: ${OPENSTACK_TOKEN}" \
                          -d "$JOB_BINARY" \
                          > "${OPENSHIFT_SP_DIR}"/tmp/response_create_job_binary_internals.json
            JOB_INTERNAL_ID=`cat "${OPENSHIFT_SP_DIR}"/tmp/response_create_job_binary_internals.json | ${JQ} -r '.job_binary_internal.id'`
-           client_message "Created job binary internal id: ${JOB_INTERNAL_ID}"
+           user_message "Created job binary internal id: ${JOB_INTERNAL_ID}"
 
 
-           client_message "Creating job binary..."
+           user_message "Creating job binary..."
            cat ${OPENSHIFT_SP_DIR}cluster/json/job_binary.json | \
                 ${JQ} ".url = \"internal-db://${JOB_INTERNAL_ID}\"" | \
                 ${JQ} ".name = \"${NAME}\"" | \
@@ -157,10 +157,10 @@ function createJob(){
 
            JOB_BINARY_ID=`cat "${OPENSHIFT_SP_DIR}"/tmp/job_binary_response.json | ${JQ} -r '.job_binary.id'`
 
-           client_message "Created job binary id: ${JOB_BINARY_ID}"
+           user_message "Created job binary id: ${JOB_BINARY_ID}"
 
         else
-           client_message "File $JOB_BINARY does not exist."
+           user_message "File $JOB_BINARY does not exist."
         fi
 }
 
