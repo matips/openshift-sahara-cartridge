@@ -174,7 +174,7 @@ function createJobBinary() {
             client_message "Creating job binary..."
             cat ${OPENSHIFT_SP_DIR}cluster/json/job_binary.json | \
                 ${JQ} ".url = \"internal-db://${JOB_INTERNAL_ID}\"" | \
-                ${JQ} ".name = \"${JOB_BINARY_NAME}\"" \
+                ${JQ} ".name = \"${JOB_BINARY_NAME}-${JOB_INTERNAL_ID}\"" \
                 > "${OPENSHIFT_SP_DIR}"/tmp/job_binary_resolved.json
 
             curl -s -X POST "$SAHARA_URL/job-binaries" \
@@ -210,7 +210,8 @@ function createJob() {
 
             client_message "Creating job..."
             cat ${OPENSHIFT_SP_DIR}cluster/json/job.json | \
-                ${JQ} ".libs = [\"${JOB_BINARY_ID}\"]" | \
+                #${JQ} ".libs = [\"${JOB_BINARY_ID}\"]" | \
+                ${JQ} ".mains = [\"${JOB_BINARY_ID}\"]" | \
                 ${JQ} ".type = \"${JOB_TYPE}\"" | \
                 ${JQ} ".name = \"${JOB_NAME}-${RANDOM}-$(date +%Y-%m-%d-%H-%M-%S)\"" \
                 > "${OPENSHIFT_SP_DIR}"/tmp/job_resolved.json
