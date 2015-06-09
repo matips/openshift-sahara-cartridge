@@ -264,7 +264,7 @@ function runJavaJob() {
 
            check_json_errors run_job_response "running java job"
 
-           JOB_ID=`cat "${OPENSHIFT_SP_DIR}"/tmp/run_job_response.json | ${JQ} -r '.job.id'`
+           JOB_ID=`cat "${OPENSHIFT_SP_DIR}"/tmp/run_job_response.json | ${JQ} -r '.job_execution.id'`
 
            client_message "Job started with id: ${JOB_ID}"
 
