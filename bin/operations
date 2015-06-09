@@ -232,7 +232,7 @@ function createJob() {
 function runJob() {
     client_message "Runngin job with id: ${JOB_ID} and type ${JOB_TYPE}"
     case ${JOB_TYPE} in
-        Java )
+        Spark )
             runJavaJob ;;
     esac
 }
