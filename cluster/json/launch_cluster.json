@@ -5,5 +5,5 @@
     "cluster_template_id" : "...",
     "user_keypair_id": "...",
     "default_image_id": "f4f68250-39d2-492b-9ec4-2cfab10a0334",
-    "neutron_management_network": "9b4a2190-9b4c-4d29-a3c2-dcf255cc1975"
+    "neutron_management_network": "1f741b49-4e3e-43fa-900a-564c85d0c9c6"
 }
