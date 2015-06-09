@@ -141,7 +141,6 @@ function deployJob(){
         else
            client_message "File $JOB_BINARY does not exist."
         fi
-        echo 'error' 1>&2
 }
 
 rawurlencode() {
@@ -248,12 +247,12 @@ function runJavaJob() {
                 ${JQ} ".job_configs.configs.\"edp.java.main_class\" = \"${edp_java_main_class}\"" \
                 > "${OPENSHIFT_SP_DIR}"/tmp/run_job_resolved.json
 
-            for ARG in $JOB_ARGS
-            do
-                cat ${OPENSHIFT_SP_DIR}tmp/run_job_resolved.json | \
-                    ${JQ} ".args += [\"${ARG}\"]" \
-                    > "${OPENSHIFT_SP_DIR}"/tmp/run_job_resolved.json
-            done
+#            for ARG in $JOB_ARGS
+#            do
+#                cat ${OPENSHIFT_SP_DIR}tmp/run_job_resolved.json | \
+#                    ${JQ} ".args += [\"${ARG}\"]" \
+#                    > "${OPENSHIFT_SP_DIR}"/tmp/run_job_resolved.json
+#            done
 
             cat ${OPENSHIFT_SP_DIR}tmp/run_job_resolved.json | ${JQ} -c "."
 
