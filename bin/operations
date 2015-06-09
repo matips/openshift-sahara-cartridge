@@ -137,9 +137,11 @@ function deployJob(){
             createJob
             runJob
 
+
         else
            client_message "File $JOB_BINARY does not exist."
         fi
+        echo 'error' 1>&2
 }
 
 rawurlencode() {
@@ -238,7 +240,7 @@ function runJob() {
 }
 function runJavaJob() {
 
-            client_message "Running java job..."
+            client_message "Running java job on cluster ${SPARK_CLUSTER_ID}..."
             cat ${OPENSHIFT_SP_DIR}cluster/json/job_execution_java.json | \
                 ${JQ} ".cluster_id = \"${SPARK_CLUSTER_ID}\"" | \
                 ${JQ} ".job_configs.configs.\"fs.swift.service.sahara.username\" = \"${fs_swift_service_sahara_username}\"" | \
