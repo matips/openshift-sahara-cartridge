@@ -108,9 +108,9 @@ function getClusterIdByName(){
         curl -s -X GET "$SAHARA_URL/clusters" \
                         -H "Content-Type: application/json" \
                         -H "X-Auth-Token: ${OPENSTACK_TOKEN}" \
-                        > "${OPENSHIFT_SP_DIR}"tmp/response_list_clusters.json
+                        > "${OPENSHIFT_SP_DIR}"tmp/response_list_clusters_2.json
 
-        SPARK_CLUSTER_ID=`cat ${OPENSHIFT_SP_DIR}tmp/response_list_clusters.json |
+        SPARK_CLUSTER_ID=`cat ${OPENSHIFT_SP_DIR}tmp/response_list_clusters_2.json |
                 ${OPENSHIFT_SP_DIR}/bin/jq '.clusters' |
                 ${OPENSHIFT_SP_DIR}/bin/jq "map(select(.name==\"${SPARK_CLUSTER_NAME}\"))[0].id" |
                 cut -d "\"" -f2`
