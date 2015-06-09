@@ -174,7 +174,7 @@ function createJobBinary() {
             client_message "Creating job binary..."
             cat ${OPENSHIFT_SP_DIR}cluster/json/job_binary.json | \
                 ${JQ} ".url = \"internal-db://${JOB_INTERNAL_ID}\"" | \
-                ${JQ} ".name = \"${JOB_INTERNAL_ID}\"" \
+                ${JQ} ".name = \"${JOB_BINARY_NAME}\"" \
                 > "${OPENSHIFT_SP_DIR}"/tmp/job_binary_resolved.json
 
             curl -s -X POST "$SAHARA_URL/job-binaries" \
