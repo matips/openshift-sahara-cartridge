@@ -269,7 +269,7 @@ function runJavaJob() {
 }
 function createJobInternal() {
    client_message "File $JOB_BINARY exists."
-   JOB_INTERNAL_NAME="$(basename $JOB_BINARY)-$(cat $JOB_BINARY | md5sum | /bin/cut -f1 -d" ")"
+   JOB_INTERNAL_NAME="$(cat $JOB_BINARY | md5sum | /bin/cut -f1 -d" ")-$(basename $JOB_BINARY)"
    client_message "File name of job binary is '${JOB_INTERNAL_NAME}'."
 
    rawurlencode "$JOB_INTERNAL_NAME"
@@ -299,6 +299,6 @@ function createJobInternal() {
                 ${OPENSHIFT_SP_DIR}/bin/jq "map(select(.name==\"${JOB_INTERNAL_NAME}\"))[0].id" |
                 cut -d "\"" -f2`
 
-        client_message "Searched JOB_INTERNAL_ID=${JOB_INTERNAL_ID}"s
+        client_message "Searched JOB_INTERNAL_ID=${JOB_INTERNAL_ID}"
     fi
 }
