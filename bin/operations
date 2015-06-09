@@ -269,7 +269,7 @@ function runJavaJob() {
 }
 function createJobInternal() {
    client_message "File $JOB_BINARY exists."
-   JOB_INTERNAL_NAME="$(cat $JOB_BINARY | md5sum | /bin/cut -f1 -d" ")-$(basename $JOB_BINARY)"
+   JOB_INTERNAL_NAME="job-internal-$(cat $JOB_BINARY | md5sum | /bin/cut -f1 -d" ")-$(basename $JOB_BINARY)"
    client_message "File name of job binary is '${JOB_INTERNAL_NAME}'."
 
    rawurlencode "$JOB_INTERNAL_NAME"
