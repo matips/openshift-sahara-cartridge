@@ -9,7 +9,7 @@ function authenticate(){
 
     # parse response and save token to appropriate variable
     TOKEN=`cat ${OPENSHIFT_SP_DIR}tmp/response_authenticate.json | ${JQ} -r '.access.token.id'`
-    client_message "Your token is: $TOKEN"
+    echo "Your token is: $TOKEN"
     OPENSTACK_TOKEN=${TOKEN}
     echo "Token is saved in OPENSTACK_TOKEN env variable: $OPENSTACK_TOKEN" >> ${OPENSHIFT_SP_LOG}
 }
@@ -24,7 +24,7 @@ function deleteCluster(){
 
     getClusterIdByName
 
-    client_message "Deleting cluster with id: $SPARK_CLUSTER_ID"
+    echo "Deleting cluster with id: $SPARK_CLUSTER_ID"
 
     curl -s -X DELETE "$SAHARA_URL/clusters/$SPARK_CLUSTER_ID"  \
                     -H "X-Auth-Token: ${OPENSTACK_TOKEN}" \
@@ -32,7 +32,7 @@ function deleteCluster(){
                     > "${OPENSHIFT_SP_DIR}"/tmp/response_delete_cluster.code
 
     DELETE_RESPONSE_CODE=`cat "${OPENSHIFT_SP_DIR}"/tmp/response_delete_cluster.code`
-    client_message "Cluster with id: $SPARK_CLUSTER_ID removed with code $DELETE_RESPONSE_CODE"
+    echo "Cluster with id: $SPARK_CLUSTER_ID removed with code $DELETE_RESPONSE_CODE"
     echo "Cluster with id: $SPARK_CLUSTER_ID removed with code $DELETE_RESPONSE_CODE"  >> ${OPENSHIFT_SP_LOG}
 }
 
@@ -53,7 +53,7 @@ function createCluster(){
             ${JQ} '.cluster_templates' |
             ${JQ} -r "map(select(.name==\"${SPARK_CLUSTER_TEMPLATE_NAME}\"))[0].id" `
 
-    client_message "Cluster template with name ${SPARK_CLUSTER_TEMPLATE_NAME} resolved as ${SPARK_CLUSTER_TEMPLATE_ID}"
+    echo "Cluster template with name ${SPARK_CLUSTER_TEMPLATE_NAME} resolved as ${SPARK_CLUSTER_TEMPLATE_ID}"
 
     check_not_null ${SPARK_CLUSTER_TEMPLATE_ID} SPARK_CLUSTER_TEMPLATE_ID
 
@@ -67,8 +67,8 @@ function createCluster(){
 
     echo `cat "${OPENSHIFT_SP_DIR}"/tmp/launch_cluster_resolved.json`  >> ${OPENSHIFT_SP_LOG}
 
-    client_message "Creating cluster from template: ${SPARK_CLUSTER_TEMPLATE_ID}"
-    client_message "Cluster name: ${SPARK_CLUSTER_NAME}"
+    echo "Creating cluster from template: ${SPARK_CLUSTER_TEMPLATE_ID}"
+    echo "Cluster name: ${SPARK_CLUSTER_NAME}"
 
     curl -s -X POST "$SAHARA_URL/clusters" \
                     -H "Content-Type: application/json" \
@@ -82,20 +82,20 @@ function createCluster(){
     if [ ${ERROR} == 'NAME_ALREADY_EXISTS' ]
     then
         echo "Cluster already exists" >> ${OPENSHIFT_SP_LOG}
-        client_message "Cluster already exists"
+        echo "Cluster already exists"
 
         getClusterIdByName
 
-        client_message "Existing cluster ID: ${SPARK_CLUSTER_ID}"
+        echo "Existing cluster ID: ${SPARK_CLUSTER_ID}"
 
     else
         SPARK_CLUSTER_ID=`cat ${OPENSHIFT_SP_DIR}tmp/response_launch_cluster.json | ${JQ} -r '.cluster.id'`
-        client_message "Created cluster ID: ${SPARK_CLUSTER_ID}"
+        echo "Created cluster ID: ${SPARK_CLUSTER_ID}"
     fi
 
     echo $SPARK_MANAGEMENT_KEY > ${OPENSHIFT_SP_DIR}tmp/SPARK_MANAGEMENT_KEY
 
-    client_message "Cluster id: $SPARK_CLUSTER_ID"
+    echo "Cluster id: $SPARK_CLUSTER_ID"
     check_not_null $SPARK_CLUSTER_ID SPARK_CLUSTER_ID
 }
 
@@ -122,7 +122,7 @@ function deployJob(){
 
         if [ -f $JOB_BINARY ];
         then
-            client_message "File $JOB_BINARY exists."
+            echo "File $JOB_BINARY exists."
 
             createJobInternal
             createJobBinary
@@ -130,7 +130,7 @@ function deployJob(){
             runJob
 
         else
-           client_message "File $JOB_BINARY does not exist."
+           echo "File $JOB_BINARY does not exist."
         fi
 }
 
@@ -153,10 +153,10 @@ rawurlencode() {
 
 function createJobInternal() {
    JOB_INTERNAL_NAME="job-internal-$(cat $JOB_BINARY | md5sum | /bin/cut -f1 -d" ")-$(basename $JOB_BINARY)"
-   client_message "File name of job binary is '${JOB_INTERNAL_NAME}'."
+   echo "File name of job binary is '${JOB_INTERNAL_NAME}'."
 
    rawurlencode "$JOB_INTERNAL_NAME"
-   client_message "File name will be encoded as '$REPLY'"
+   echo "File name will be encoded as '$REPLY'"
 
    curl -s -X PUT "$SAHARA_URL/job-binary-internals/$REPLY" \
                  -H "X-Auth-Token: ${OPENSTACK_TOKEN}" \
@@ -167,7 +167,7 @@ function createJobInternal() {
    check_json_errors response_create_job_binary_internals "creating job binary internal"
    JOB_INTERNAL_ID=`cat "${OPENSHIFT_SP_DIR}"/tmp/response_create_job_binary_internals.json | ${JQ} -r '.job_binary_internal.id'`
 
-   client_message "Created job binary internal id: ${JOB_INTERNAL_ID}"
+   echo "Created job binary internal id: ${JOB_INTERNAL_ID}"
 
     if [ ${ERROR} == 'DB_DUPLICATE_ENTRY' ]
     then
@@ -180,17 +180,18 @@ function createJobInternal() {
                 ${JQ} '.binaries' |
                 ${JQ} -r "map(select(.name==\"${JOB_INTERNAL_NAME}\"))[0].id"`
 
-        client_message "Searched JOB_INTERNAL_ID=${JOB_INTERNAL_ID}"
+        echo "Searched JOB_INTERNAL_ID=${JOB_INTERNAL_ID}"
     fi
 
     check_not_null $JOB_INTERNAL_ID JOB_INTERNAL_ID
 }
 function createJobBinary() {
+    JOB_BINARY_NAME="jb-$(cat $JOB_BINARY | md5sum | /bin/cut -f1 -d" ")"
 
-    client_message "Creating job binary..."
+    echo "Creating job binary with name ${JOB_BINARY_NAME}"
     cat ${OPENSHIFT_SP_DIR}cluster/json/job_binary.json | \
         ${JQ} ".url = \"internal-db://${JOB_INTERNAL_ID}\"" | \
-        ${JQ} ".name = \"jb-$(cat $JOB_BINARY | md5sum | /bin/cut -f1 -d" ")\"" \
+        ${JQ} ".name = \"${JOB_BINARY_NAME}\"" \
         > "${OPENSHIFT_SP_DIR}"/tmp/job_binary_resolved.json
 
     curl -s -X POST "$SAHARA_URL/job-binaries" \
@@ -203,7 +204,7 @@ function createJobBinary() {
 
     JOB_BINARY_ID=`cat "${OPENSHIFT_SP_DIR}"/tmp/job_binary_response.json | ${JQ} -r '.job_binary.id'`
 
-    client_message "Created job binary id: ${JOB_BINARY_ID}"
+    echo "Created job binary id: ${JOB_BINARY_ID}"
 
     if [ ${ERROR} == 'DB_DUPLICATE_ENTRY' ]
     then
@@ -214,16 +215,16 @@ function createJobBinary() {
 
         JOB_BINARY_ID=`cat ${OPENSHIFT_SP_DIR}tmp/job-binaries_list.json |
                 ${JQ} '.binaries' |
-                ${JQ} -r "map(select(.name==\"$(basename $JOB_BINARY)\"))[0].id" `
+                ${JQ} -r "map(select(.name==\"${JOB_BINARY_NAME}\"))[0].id" `
 
-        client_message "Searched JOB_BINARY_ID=${JOB_BINARY_ID}"
+        echo "Searched JOB_BINARY_ID=${JOB_BINARY_ID}"
 
     fi
     check_not_null $JOB_BINARY_ID JOB_BINARY_ID
 }
 function createJob() {
 
-    client_message "Creating job..."
+    echo "Creating job..."
     cat ${OPENSHIFT_SP_DIR}cluster/json/job.json | \
         #${JQ} ".libs = [\"${JOB_BINARY_ID}\"]" | \
         ${JQ} ".mains = [\"${JOB_BINARY_ID}\"]" | \
@@ -241,11 +242,11 @@ function createJob() {
 
     JOB_ID=`cat "${OPENSHIFT_SP_DIR}"/tmp/job_response.json | ${JQ} -r '.job.id'`
 
-    client_message "Created job with id: ${JOB_ID}"
+    echo "Created job with id: ${JOB_ID}"
 }
 
 function runJob() {
-    client_message "Runngin job with id: ${JOB_ID} and type ${JOB_TYPE}"
+    echo "Runngin job with id: ${JOB_ID} and type ${JOB_TYPE}"
     case ${JOB_TYPE} in
         Spark )
             runJavaJob ;;
@@ -256,7 +257,7 @@ function runJob() {
 
 function runJavaJob() {
 
-            client_message "Running java job on cluster ${SPARK_CLUSTER_ID}..."
+            echo "Running java job on cluster ${SPARK_CLUSTER_ID}..."
             cat ${OPENSHIFT_SP_DIR}cluster/json/job_execution_java.json | \
                 ${JQ} ".cluster_id = \"${SPARK_CLUSTER_ID}\"" | \
                 ${JQ} ".job_configs.configs.\"fs.swift.service.sahara.username\" = \"${fs_swift_service_sahara_username}\"" | \
@@ -274,7 +275,7 @@ function runJavaJob() {
                     > "${OPENSHIFT_SP_DIR}"tmp/run_job_resolved.json
             done
 
-            cat ${OPENSHIFT_SP_DIR}tmp/run_job_resolved.json
+            cat ${OPENSHIFT_SP_DIR}tmp/run_job_resolved.json | ${JQ} "." -C
 
             curl -s -X POST "$SAHARA_URL/jobs/${JOB_ID}/execute" \
                          -H "Content-Type: application/json" \
@@ -286,7 +287,7 @@ function runJavaJob() {
 
            JOB_ID=`cat "${OPENSHIFT_SP_DIR}"/tmp/run_job_response.json | ${JQ} -r '.job_execution.id'`
 
-           client_message "Job started with execution id: ${JOB_ID}"
+           echo "Job started with execution id: ${JOB_ID}"
            cat "${OPENSHIFT_SP_DIR}"tmp/run_job_response.json | ${JQ} "." -C
 }
 
@@ -298,7 +299,7 @@ function check_json_errors() {
 
     if [ ${ERROR} != 'null' ]
     then
-        client_message "Error [${ERROR}] when ${2}: ${ERROR_MESSAGE}"
+        echo "Error [${ERROR}] when ${2}: ${ERROR_MESSAGE}"
     fi
 }
 
