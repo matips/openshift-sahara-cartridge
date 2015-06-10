@@ -1,6 +1,6 @@
 #!/bin/sh
 source ../cluster/config.properties
-JQ="${OPENSHIFT_SP_DIR}/bin/jq"
+JQ="${OPENSHIFT_SP_DIR}bin/jq"
 function authenticate(){
     curl -s -X POST "$OPENSTACK_AUTH_URL"/tokens \
                     -H "Content-Type: application/json" \
@@ -50,9 +50,8 @@ function createCluster(){
                     > "${OPENSHIFT_SP_DIR}"tmp/response_list_clusters_template.json
 
     SPARK_CLUSTER_TEMPLATE_ID=`cat ${OPENSHIFT_SP_DIR}tmp/response_list_clusters_template.json |
-            ${OPENSHIFT_SP_DIR}/bin/jq '.cluster_templates' |
-            ${OPENSHIFT_SP_DIR}/bin/jq "map(select(.name==\"${SPARK_CLUSTER_TEMPLATE_NAME}\"))[0].id" |
-            cut -d "\"" -f2`
+            ${JQ} '.cluster_templates' |
+            ${JQ} -r "map(select(.name==\"${SPARK_CLUSTER_TEMPLATE_NAME}\"))[0].id" `
 
     client_message "Cluster template with name ${SPARK_CLUSTER_TEMPLATE_NAME} resolved as ${SPARK_CLUSTER_TEMPLATE_ID}"
 
@@ -108,9 +107,8 @@ function getClusterIdByName(){
                         > "${OPENSHIFT_SP_DIR}"tmp/response_list_clusters_2.json
 
         SPARK_CLUSTER_ID=`cat ${OPENSHIFT_SP_DIR}tmp/response_list_clusters_2.json |
-                ${OPENSHIFT_SP_DIR}/bin/jq '.clusters' |
-                ${OPENSHIFT_SP_DIR}/bin/jq "map(select(.name==\"${SPARK_CLUSTER_NAME}\"))[0].id" |
-                cut -d "\"" -f2`
+                ${JQ} '.clusters' |
+                ${JQ} -r "map(select(.name==\"${SPARK_CLUSTER_NAME}\"))[0].id" `
 
 }
 
@@ -179,9 +177,8 @@ function createJobInternal() {
 
 
         JOB_INTERNAL_ID=`cat ${OPENSHIFT_SP_DIR}tmp/job_binary_internals_list2.json |
-                ${OPENSHIFT_SP_DIR}/bin/jq '.binaries' |
-                ${OPENSHIFT_SP_DIR}/bin/jq "map(select(.name==\"${JOB_INTERNAL_NAME}\"))[0].id" |
-                cut -d "\"" -f2`
+                ${JQ} '.binaries' |
+                ${JQ} -r "map(select(.name==\"${JOB_INTERNAL_NAME}\"))[0].id"`
 
         client_message "Searched JOB_INTERNAL_ID=${JOB_INTERNAL_ID}"
     fi
@@ -193,7 +190,7 @@ function createJobBinary() {
     client_message "Creating job binary..."
     cat ${OPENSHIFT_SP_DIR}cluster/json/job_binary.json | \
         ${JQ} ".url = \"internal-db://${JOB_INTERNAL_ID}\"" | \
-        ${JQ} ".name = \"${JOB_BINARY_NAME}-${JOB_INTERNAL_ID}\"" \
+        ${JQ} ".name = \"$(basename $JOB_BINARY)-$(cat $JOB_BINARY | md5sum | /bin/cut -f1 -d" ")\"" \
         > "${OPENSHIFT_SP_DIR}"/tmp/job_binary_resolved.json
 
     curl -s -X POST "$SAHARA_URL/job-binaries" \
@@ -216,9 +213,8 @@ function createJobBinary() {
 
 
         JOB_BINARY_ID=`cat ${OPENSHIFT_SP_DIR}tmp/job-binaries_list2.json |
-                ${OPENSHIFT_SP_DIR}/bin/jq '.binaries' |
-                ${OPENSHIFT_SP_DIR}/bin/jq "map(select(.name==\"$(basename $JOB_BINARY)\"))[0].id" |
-                cut -d "\"" -f2`
+                ${JQ} '.binaries' |
+                ${JQ} -r "map(select(.name==\"$(basename $JOB_BINARY)\"))[0].id" `
 
         client_message "Searched JOB_BINARY_ID=${JOB_BINARY_ID}"
 
@@ -266,13 +262,16 @@ function runJavaJob() {
                 ${JQ} ".job_configs.configs.\"fs.swift.service.sahara.username\" = \"${fs_swift_service_sahara_username}\"" | \
                 ${JQ} ".job_configs.configs.\"fs.swift.service.sahara.password\" = \"${fs_swift_service_sahara_password}\"" | \
                 ${JQ} ".job_configs.configs.\"edp.java.main_class\" = \"${edp_java_main_class}\"" \
-                > "${OPENSHIFT_SP_DIR}"/tmp/run_job_resolved.json
+                > "${OPENSHIFT_SP_DIR}"tmp/run_job_resolved.json
 
             for ARG in $JOB_ARGS
             do
-                cat ${OPENSHIFT_SP_DIR}tmp/run_job_resolved.json | \
-                    ${JQ} ".job_configs.args += [\"${ARG}\"]" \
-                    > "${OPENSHIFT_SP_DIR}"/tmp/run_job_resolved.json
+                cat "${OPENSHIFT_SP_DIR}"tmp/run_job_resolved.json | \
+                    ${JQ} ".job_configs.args += [\"123\"]" \
+                    > "${OPENSHIFT_SP_DIR}"tmp/run_job_resolved_t.json
+
+                cat "${OPENSHIFT_SP_DIR}"tmp/run_job_resolved_t.json \
+                    > "${OPENSHIFT_SP_DIR}"tmp/run_job_resolved.json
             done
 
             cat ${OPENSHIFT_SP_DIR}tmp/run_job_resolved.json

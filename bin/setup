@@ -21,11 +21,6 @@ echo "Auth url: $OPENSTACK_AUTH_URL" >> ${OPENSHIFT_SP_LOG}
 mkdir -p ${OPENSHIFT_SP_DIR}run
 mkdir -p ${OPENSHIFT_SP_DIR}tmp
 
-authenticate
-#createMasterNodeGroup
-#createSlaveNodeGroup
-#createClusterTemplate
-createCluster
-deployJob
+chmod 777 ${OPENSHIFT_SP_DIR}tmp
 
 exit 0
