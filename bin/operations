@@ -190,7 +190,7 @@ function createJobBinary() {
     client_message "Creating job binary..."
     cat ${OPENSHIFT_SP_DIR}cluster/json/job_binary.json | \
         ${JQ} ".url = \"internal-db://${JOB_INTERNAL_ID}\"" | \
-        ${JQ} ".name = \"$(basename $JOB_BINARY)-$(cat $JOB_BINARY | md5sum | /bin/cut -f1 -d" ")\"" \
+        ${JQ} ".name = \"$(cat $JOB_BINARY | md5sum | /bin/cut -f1 -d" ")\"" \
         > "${OPENSHIFT_SP_DIR}"/tmp/job_binary_resolved.json
 
     curl -s -X POST "$SAHARA_URL/job-binaries" \
@@ -209,10 +209,10 @@ function createJobBinary() {
     then
         curl -s -X GET "$SAHARA_URL/job-binaries" \
                     -H "X-Auth-Token: ${OPENSTACK_TOKEN}" \
-                    > "${OPENSHIFT_SP_DIR}"tmp/job-binaries_list2.json
+                    > "${OPENSHIFT_SP_DIR}"tmp/job-binaries_list.json
 
 
-        JOB_BINARY_ID=`cat ${OPENSHIFT_SP_DIR}tmp/job-binaries_list2.json |
+        JOB_BINARY_ID=`cat ${OPENSHIFT_SP_DIR}tmp/job-binaries_list.json |
                 ${JQ} '.binaries' |
                 ${JQ} -r "map(select(.name==\"$(basename $JOB_BINARY)\"))[0].id" `
 
@@ -228,7 +228,7 @@ function createJob() {
         #${JQ} ".libs = [\"${JOB_BINARY_ID}\"]" | \
         ${JQ} ".mains = [\"${JOB_BINARY_ID}\"]" | \
         ${JQ} ".type = \"${JOB_TYPE}\"" | \
-        ${JQ} ".name = \"${JOB_NAME}-${RANDOM}-$(date +%Y-%m-%d-%H-%M-%S)\"" \
+        ${JQ} ".name = \"${JOB_NAME}-$(date +%Y-%m-%d__%H_%M_%S)\"" \
         > "${OPENSHIFT_SP_DIR}"/tmp/job_resolved.json
 
     curl -s -X POST "$SAHARA_URL/jobs" \
@@ -287,7 +287,7 @@ function runJavaJob() {
            JOB_ID=`cat "${OPENSHIFT_SP_DIR}"/tmp/run_job_response.json | ${JQ} -r '.job_execution.id'`
 
            client_message "Job started with execution id: ${JOB_ID}"
-           cat "${OPENSHIFT_SP_DIR}"tmp/run_job_response.json
+           cat "${OPENSHIFT_SP_DIR}"tmp/run_job_response.json | ${JQ} "." -C
 }
 
 
