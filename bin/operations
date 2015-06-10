@@ -14,25 +14,6 @@ function authenticate(){
     echo "Token is saved in OPENSTACK_TOKEN env variable: $OPENSTACK_TOKEN" >> ${OPENSHIFT_SP_LOG}
 }
 
-function createClusterTemplate(){
-    authenticate
-
-    cat  "${OPENSHIFT_SP_DIR}"/cluster/json/cluster_basic.json | \
-               ${JQ} ".node_groups[0].node_group_template_id = \"${SPARK_TEMPLATE_MASTER_ID}\"" | \
-               ${JQ} ".node_groups[1].node_group_template_id = \"${SPARK_TEMPLATE_SLAVE_ID}\"" | \
-               ${JQ} ".node_groups[1].count = \"${WORKERS_COUNT}\"" \
-               > ${OPENSHIFT_SP_DIR}/tmp/cluster_basic_resolved.json
-
-    curl -s -X POST "$SAHARA_URL/cluster-templates" \
-                    -H "Content-Type: application/json" \
-                    -H "X-Auth-Token: ${OPENSTACK_TOKEN}" \
-                    -d @"${OPENSHIFT_SP_DIR}"/tmp/cluster_basic_resolved.json \
-                    > "${OPENSHIFT_SP_DIR}"/tmp/response_cluster_basic.json
-
-    SPARK_CLUSTER_TEMPLATE_ID=`cat ${OPENSHIFT_SP_DIR}tmp/response_cluster_basic.json | ${JQ} -r '.cluster_template.id'`
-
-    echo "Cluster template id: $SPARK_CLUSTER_TEMPLATE_ID" >> ${OPENSHIFT_SP_LOG}
-}
 function deleteCluster(){
     if [ ! -z "$1"  -a -f "$1" ]
     then
@@ -63,10 +44,26 @@ function createCluster(){
 
     authenticate
 
+    curl -s -X GET "$SAHARA_URL/cluster-templates" \
+                    -H "Content-Type: application/json" \
+                    -H "X-Auth-Token: ${OPENSTACK_TOKEN}" \
+                    > "${OPENSHIFT_SP_DIR}"tmp/response_list_clusters_template.json
+
+    SPARK_CLUSTER_TEMPLATE_ID=`cat ${OPENSHIFT_SP_DIR}tmp/response_list_clusters_template.json |
+            ${OPENSHIFT_SP_DIR}/bin/jq '.cluster_templates' |
+            ${OPENSHIFT_SP_DIR}/bin/jq "map(select(.name==\"${SPARK_CLUSTER_TEMPLATE_NAME}\"))[0].id" |
+            cut -d "\"" -f2`
+
+    client_message "Cluster template with name ${SPARK_CLUSTER_TEMPLATE_NAME} resolved as ${SPARK_CLUSTER_TEMPLATE_ID}"
+
+    check_not_null ${SPARK_CLUSTER_TEMPLATE_ID} SPARK_CLUSTER_TEMPLATE_ID
+
     cat ${OPENSHIFT_SP_DIR}cluster/json/launch_cluster.json | \
                 ${JQ} ".cluster_template_id = \"${SPARK_CLUSTER_TEMPLATE_ID}\"" | \
                 ${JQ} ".user_keypair_id = \"${SPARK_USER_KEY_PAIR}\"" | \
-                ${JQ} ".name = \"${SPARK_CLUSTER_NAME}\"" \
+                ${JQ} ".name = \"${SPARK_CLUSTER_NAME}\"" | \
+                ${JQ} ".default_image_id = \"${SPARK_DEFAULT_IMAGE_ID}\"" | \
+                ${JQ} ".neutron_management_network = \"${NEUTRON_MANAGEMENT_NETWORK}\"" \
                 > "${OPENSHIFT_SP_DIR}"/tmp/launch_cluster_resolved.json
 
     echo `cat "${OPENSHIFT_SP_DIR}"/tmp/launch_cluster_resolved.json`  >> ${OPENSHIFT_SP_LOG}
@@ -80,7 +77,6 @@ function createCluster(){
                     -d @"${OPENSHIFT_SP_DIR}"/tmp/launch_cluster_resolved.json \
                         > "${OPENSHIFT_SP_DIR}"/tmp/response_launch_cluster.json
 
-    echo `cat "${OPENSHIFT_SP_DIR}"/tmp/response_launch_cluster.json`  >> ${OPENSHIFT_SP_LOG}
 
     check_json_errors response_launch_cluster "creating cluster"
 
@@ -100,7 +96,8 @@ function createCluster(){
 
     echo $SPARK_MANAGEMENT_KEY > ${OPENSHIFT_SP_DIR}tmp/SPARK_MANAGEMENT_KEY
 
-    echo "Cluster id: $SPARK_CLUSTER_ID" >> ${OPENSHIFT_SP_LOG}
+    client_message "Cluster id: $SPARK_CLUSTER_ID"
+    check_not_null $SPARK_CLUSTER_ID SPARK_CLUSTER_ID
 }
 
 function getClusterIdByName(){
@@ -125,18 +122,14 @@ function deployJob(){
 
         authenticate
 
-
         if [ -f $JOB_BINARY ];
         then
+            client_message "File $JOB_BINARY exists."
+
             createJobInternal
-
-
             createJobBinary
-
-
             createJob
             runJob
-
 
         else
            client_message "File $JOB_BINARY does not exist."
@@ -156,121 +149,11 @@ rawurlencode() {
      esac
      encoded+="${o}"
   done
-  #echo "${encoded}"    # You can either set a return variable (FASTER)
   REPLY="${encoded}"   #+or echo the result (EASIER)... or both... :p
 }
 
-function check_json_errors() {
 
-    ERROR=`cat ${OPENSHIFT_SP_DIR}tmp/${1}.json | ${JQ} -r '.error_name?'`
-    ERROR_MESSAGE=`cat ${OPENSHIFT_SP_DIR}tmp/${1}.json | ${JQ} -r '.error_message?'`
-
-    if [ ${ERROR} != 'null' ]
-    then
-        client_message "Error [${ERROR}] when ${2}: ${ERROR_MESSAGE}"
-    fi
-}
-function createJobBinary() {
-
-            client_message "Creating job binary..."
-            cat ${OPENSHIFT_SP_DIR}cluster/json/job_binary.json | \
-                ${JQ} ".url = \"internal-db://${JOB_INTERNAL_ID}\"" | \
-                ${JQ} ".name = \"${JOB_BINARY_NAME}-${JOB_INTERNAL_ID}\"" \
-                > "${OPENSHIFT_SP_DIR}"/tmp/job_binary_resolved.json
-
-            curl -s -X POST "$SAHARA_URL/job-binaries" \
-                         -H "Content-Type: application/json" \
-                         -H "X-Auth-Token: ${OPENSTACK_TOKEN}" \
-                         -d @"${OPENSHIFT_SP_DIR}"/tmp/job_binary_resolved.json \
-                         > "${OPENSHIFT_SP_DIR}"/tmp/job_binary_response.json
-
-           check_json_errors job_binary_response "creating job-binary"
-
-           JOB_BINARY_ID=`cat "${OPENSHIFT_SP_DIR}"/tmp/job_binary_response.json | ${JQ} -r '.job_binary.id'`
-
-           client_message "Created job binary id: ${JOB_BINARY_ID}"
-
-            if [ ${ERROR} == 'DB_DUPLICATE_ENTRY' ]
-            then
-                curl -s -X GET "$SAHARA_URL/job-binaries" \
-                            -H "X-Auth-Token: ${OPENSTACK_TOKEN}" \
-                            > "${OPENSHIFT_SP_DIR}"tmp/job-binaries_list2.json
-
-
-                JOB_BINARY_ID=`cat ${OPENSHIFT_SP_DIR}tmp/job-binaries_list2.json |
-                        ${OPENSHIFT_SP_DIR}/bin/jq '.binaries' |
-                        ${OPENSHIFT_SP_DIR}/bin/jq "map(select(.name==\"$(basename $JOB_BINARY)\"))[0].id" |
-                        cut -d "\"" -f2`
-
-                client_message "Searched JOB_BINARY_ID=${JOB_BINARY_ID}"
-
-            fi
-
-}
-function createJob() {
-
-            client_message "Creating job..."
-            cat ${OPENSHIFT_SP_DIR}cluster/json/job.json | \
-                #${JQ} ".libs = [\"${JOB_BINARY_ID}\"]" | \
-                ${JQ} ".mains = [\"${JOB_BINARY_ID}\"]" | \
-                ${JQ} ".type = \"${JOB_TYPE}\"" | \
-                ${JQ} ".name = \"${JOB_NAME}-${RANDOM}-$(date +%Y-%m-%d-%H-%M-%S)\"" \
-                > "${OPENSHIFT_SP_DIR}"/tmp/job_resolved.json
-
-            curl -s -X POST "$SAHARA_URL/jobs" \
-                         -H "Content-Type: application/json" \
-                         -H "X-Auth-Token: ${OPENSTACK_TOKEN}" \
-                         -d @"${OPENSHIFT_SP_DIR}"/tmp/job_resolved.json \
-                         > "${OPENSHIFT_SP_DIR}"/tmp/job_response.json
-
-           check_json_errors job_response "creating job"
-
-           JOB_ID=`cat "${OPENSHIFT_SP_DIR}"/tmp/job_response.json | ${JQ} -r '.job.id'`
-
-           client_message "Created job with id: ${JOB_ID}"
-}
-
-function runJob() {
-    client_message "Runngin job with id: ${JOB_ID} and type ${JOB_TYPE}"
-    case ${JOB_TYPE} in
-        Spark )
-            runJavaJob ;;
-    esac
-}
-function runJavaJob() {
-
-            client_message "Running java job on cluster ${SPARK_CLUSTER_ID}..."
-            cat ${OPENSHIFT_SP_DIR}cluster/json/job_execution_java.json | \
-                ${JQ} ".cluster_id = \"${SPARK_CLUSTER_ID}\"" | \
-                ${JQ} ".job_configs.configs.\"fs.swift.service.sahara.username\" = \"${fs_swift_service_sahara_username}\"" | \
-                ${JQ} ".job_configs.configs.\"fs.swift.service.sahara.password\" = \"${fs_swift_service_sahara_password}\"" | \
-                ${JQ} ".job_configs.configs.\"edp.java.main_class\" = \"${edp_java_main_class}\"" \
-                > "${OPENSHIFT_SP_DIR}"/tmp/run_job_resolved.json
-
-#            for ARG in $JOB_ARGS
-#            do
-#                cat ${OPENSHIFT_SP_DIR}tmp/run_job_resolved.json | \
-#                    ${JQ} ".args += [\"${ARG}\"]" \
-#                    > "${OPENSHIFT_SP_DIR}"/tmp/run_job_resolved.json
-#            done
-
-            cat ${OPENSHIFT_SP_DIR}tmp/run_job_resolved.json | ${JQ} -c "."
-
-            curl -s -X POST "$SAHARA_URL/jobs/${JOB_ID}/execute" \
-                         -H "Content-Type: application/json" \
-                         -H "X-Auth-Token: ${OPENSTACK_TOKEN}" \
-                         -d @"${OPENSHIFT_SP_DIR}"/tmp/run_job_resolved.json \
-                         > "${OPENSHIFT_SP_DIR}"/tmp/run_job_response.json
-
-           check_json_errors run_job_response "running java job"
-
-           JOB_ID=`cat "${OPENSHIFT_SP_DIR}"/tmp/run_job_response.json | ${JQ} -r '.job_execution.id'`
-
-           client_message "Job started with id: ${JOB_ID}"
-
-}
 function createJobInternal() {
-   client_message "File $JOB_BINARY exists."
    JOB_INTERNAL_NAME="job-internal-$(cat $JOB_BINARY | md5sum | /bin/cut -f1 -d" ")-$(basename $JOB_BINARY)"
    client_message "File name of job binary is '${JOB_INTERNAL_NAME}'."
 
@@ -288,7 +171,6 @@ function createJobInternal() {
 
    client_message "Created job binary internal id: ${JOB_INTERNAL_ID}"
 
-
     if [ ${ERROR} == 'DB_DUPLICATE_ENTRY' ]
     then
         curl -s -X GET "$SAHARA_URL/job-binary-internals" \
@@ -303,4 +185,129 @@ function createJobInternal() {
 
         client_message "Searched JOB_INTERNAL_ID=${JOB_INTERNAL_ID}"
     fi
+
+    check_not_null $JOB_INTERNAL_ID JOB_INTERNAL_ID
+}
+function createJobBinary() {
+
+    client_message "Creating job binary..."
+    cat ${OPENSHIFT_SP_DIR}cluster/json/job_binary.json | \
+        ${JQ} ".url = \"internal-db://${JOB_INTERNAL_ID}\"" | \
+        ${JQ} ".name = \"${JOB_BINARY_NAME}-${JOB_INTERNAL_ID}\"" \
+        > "${OPENSHIFT_SP_DIR}"/tmp/job_binary_resolved.json
+
+    curl -s -X POST "$SAHARA_URL/job-binaries" \
+                 -H "Content-Type: application/json" \
+                 -H "X-Auth-Token: ${OPENSTACK_TOKEN}" \
+                 -d @"${OPENSHIFT_SP_DIR}"/tmp/job_binary_resolved.json \
+                 > "${OPENSHIFT_SP_DIR}"/tmp/job_binary_response.json
+
+    check_json_errors job_binary_response "creating job-binary"
+
+    JOB_BINARY_ID=`cat "${OPENSHIFT_SP_DIR}"/tmp/job_binary_response.json | ${JQ} -r '.job_binary.id'`
+
+    client_message "Created job binary id: ${JOB_BINARY_ID}"
+
+    if [ ${ERROR} == 'DB_DUPLICATE_ENTRY' ]
+    then
+        curl -s -X GET "$SAHARA_URL/job-binaries" \
+                    -H "X-Auth-Token: ${OPENSTACK_TOKEN}" \
+                    > "${OPENSHIFT_SP_DIR}"tmp/job-binaries_list2.json
+
+
+        JOB_BINARY_ID=`cat ${OPENSHIFT_SP_DIR}tmp/job-binaries_list2.json |
+                ${OPENSHIFT_SP_DIR}/bin/jq '.binaries' |
+                ${OPENSHIFT_SP_DIR}/bin/jq "map(select(.name==\"$(basename $JOB_BINARY)\"))[0].id" |
+                cut -d "\"" -f2`
+
+        client_message "Searched JOB_BINARY_ID=${JOB_BINARY_ID}"
+
+    fi
+    check_not_null $JOB_BINARY_ID JOB_BINARY_ID
+}
+function createJob() {
+
+    client_message "Creating job..."
+    cat ${OPENSHIFT_SP_DIR}cluster/json/job.json | \
+        #${JQ} ".libs = [\"${JOB_BINARY_ID}\"]" | \
+        ${JQ} ".mains = [\"${JOB_BINARY_ID}\"]" | \
+        ${JQ} ".type = \"${JOB_TYPE}\"" | \
+        ${JQ} ".name = \"${JOB_NAME}-${RANDOM}-$(date +%Y-%m-%d-%H-%M-%S)\"" \
+        > "${OPENSHIFT_SP_DIR}"/tmp/job_resolved.json
+
+    curl -s -X POST "$SAHARA_URL/jobs" \
+                 -H "Content-Type: application/json" \
+                 -H "X-Auth-Token: ${OPENSTACK_TOKEN}" \
+                 -d @"${OPENSHIFT_SP_DIR}"/tmp/job_resolved.json \
+                 > "${OPENSHIFT_SP_DIR}"/tmp/job_response.json
+
+    check_json_errors job_response "creating job"
+
+    JOB_ID=`cat "${OPENSHIFT_SP_DIR}"/tmp/job_response.json | ${JQ} -r '.job.id'`
+
+    client_message "Created job with id: ${JOB_ID}"
+}
+
+function runJob() {
+    client_message "Runngin job with id: ${JOB_ID} and type ${JOB_TYPE}"
+    case ${JOB_TYPE} in
+        Spark )
+            runJavaJob ;;
+        Java )
+            runJavaJob ;;
+    esac
+}
+
+function runJavaJob() {
+
+            client_message "Running java job on cluster ${SPARK_CLUSTER_ID}..."
+            cat ${OPENSHIFT_SP_DIR}cluster/json/job_execution_java.json | \
+                ${JQ} ".cluster_id = \"${SPARK_CLUSTER_ID}\"" | \
+                ${JQ} ".job_configs.configs.\"fs.swift.service.sahara.username\" = \"${fs_swift_service_sahara_username}\"" | \
+                ${JQ} ".job_configs.configs.\"fs.swift.service.sahara.password\" = \"${fs_swift_service_sahara_password}\"" | \
+                ${JQ} ".job_configs.configs.\"edp.java.main_class\" = \"${edp_java_main_class}\"" \
+                > "${OPENSHIFT_SP_DIR}"/tmp/run_job_resolved.json
+
+            for ARG in $JOB_ARGS
+            do
+                cat ${OPENSHIFT_SP_DIR}tmp/run_job_resolved.json | \
+                    ${JQ} ".job_configs.args += [\"${ARG}\"]" \
+                    > "${OPENSHIFT_SP_DIR}"/tmp/run_job_resolved.json
+            done
+
+            cat ${OPENSHIFT_SP_DIR}tmp/run_job_resolved.json
+
+            curl -s -X POST "$SAHARA_URL/jobs/${JOB_ID}/execute" \
+                         -H "Content-Type: application/json" \
+                         -H "X-Auth-Token: ${OPENSTACK_TOKEN}" \
+                         -d @"${OPENSHIFT_SP_DIR}"/tmp/run_job_resolved.json \
+                         > "${OPENSHIFT_SP_DIR}"/tmp/run_job_response.json
+
+           check_json_errors run_job_response "running java job"
+
+           JOB_ID=`cat "${OPENSHIFT_SP_DIR}"/tmp/run_job_response.json | ${JQ} -r '.job_execution.id'`
+
+           client_message "Job started with id: ${JOB_ID}"
+
+}
+
+
+function check_json_errors() {
+
+    ERROR=`cat ${OPENSHIFT_SP_DIR}tmp/${1}.json | ${JQ} -r '.error_name?'`
+    ERROR_MESSAGE=`cat ${OPENSHIFT_SP_DIR}tmp/${1}.json | ${JQ} -r '.error_message?'`
+
+    if [ ${ERROR} != 'null' ]
+    then
+        client_message "Error [${ERROR}] when ${2}: ${ERROR_MESSAGE}"
+    fi
+}
+
+function check_not_null() {
+
+    if [ $1 == 'null' ]
+    then
+        error "Variable ${2} is null"
+    fi
+
 }
