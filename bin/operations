@@ -267,7 +267,7 @@ function runJavaJob() {
             for ARG in $JOB_ARGS
             do
                 cat "${OPENSHIFT_SP_DIR}"tmp/run_job_resolved.json | \
-                    ${JQ} ".job_configs.args += [\"123\"]" \
+                    ${JQ} ".job_configs.args += [\"${ARG}\"]" \
                     > "${OPENSHIFT_SP_DIR}"tmp/run_job_resolved_t.json
 
                 cat "${OPENSHIFT_SP_DIR}"tmp/run_job_resolved_t.json \
@@ -280,14 +280,14 @@ function runJavaJob() {
                          -H "Content-Type: application/json" \
                          -H "X-Auth-Token: ${OPENSTACK_TOKEN}" \
                          -d @"${OPENSHIFT_SP_DIR}"/tmp/run_job_resolved.json \
-                         > "${OPENSHIFT_SP_DIR}"/tmp/run_job_response.json
+                         > "${OPENSHIFT_SP_DIR}"/tmp/c
 
            check_json_errors run_job_response "running java job"
 
            JOB_ID=`cat "${OPENSHIFT_SP_DIR}"/tmp/run_job_response.json | ${JQ} -r '.job_execution.id'`
 
-           client_message "Job started with id: ${JOB_ID}"
-
+           client_message "Job started with execution id: ${JOB_ID}"
+           cat "${OPENSHIFT_SP_DIR}"tmp/run_job_resolved.json
 }
 
 
