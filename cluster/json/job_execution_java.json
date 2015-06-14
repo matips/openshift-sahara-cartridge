@@ -2,10 +2,7 @@
     "cluster_id": "",
     "job_configs": {
         "configs": {
-            "fs.swift.service.sahara.username": "",
-            "fs.swift.service.sahara.password": "",
-            "edp.java.main_class": ""
-        },
-        "args": []
+            "edp.java.main_class": "",
+        }
     }
 }

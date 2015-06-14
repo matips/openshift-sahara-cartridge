@@ -260,20 +260,20 @@ function runJavaJob() {
             echo "Running java job on cluster ${SPARK_CLUSTER_ID}..."
             cat ${OPENSHIFT_SP_DIR}cluster/json/job_execution_java.json | \
                 ${JQ} ".cluster_id = \"${SPARK_CLUSTER_ID}\"" | \
-                ${JQ} ".job_configs.configs.\"fs.swift.service.sahara.username\" = \"${fs_swift_service_sahara_username}\"" | \
-                ${JQ} ".job_configs.configs.\"fs.swift.service.sahara.password\" = \"${fs_swift_service_sahara_password}\"" | \
+#                ${JQ} ".job_configs.configs.\"fs.swift.service.sahara.username\" = \"${fs_swift_service_sahara_username}\"" | \
+#                ${JQ} ".job_configs.configs.\"fs.swift.service.sahara.password\" = \"${fs_swift_service_sahara_password}\"" | \
                 ${JQ} ".job_configs.configs.\"edp.java.main_class\" = \"${edp_java_main_class}\"" \
                 > "${OPENSHIFT_SP_DIR}"tmp/run_job_resolved.json
 
-            for ARG in $JOB_ARGS
-            do
-                cat "${OPENSHIFT_SP_DIR}"tmp/run_job_resolved.json | \
-                    ${JQ} ".job_configs.args += [\"${ARG}\"]" \
-                    > "${OPENSHIFT_SP_DIR}"tmp/run_job_resolved_t.json
-
-                cat "${OPENSHIFT_SP_DIR}"tmp/run_job_resolved_t.json \
-                    > "${OPENSHIFT_SP_DIR}"tmp/run_job_resolved.json
-            done
+#            for ARG in $JOB_ARGS
+#            do
+#                cat "${OPENSHIFT_SP_DIR}"tmp/run_job_resolved.json | \
+#                    ${JQ} ".job_configs.args += [\"${ARG}\"]" \
+#                    > "${OPENSHIFT_SP_DIR}"tmp/run_job_resolved_t.json
+#
+#                cat "${OPENSHIFT_SP_DIR}"tmp/run_job_resolved_t.json \
+#                    > "${OPENSHIFT_SP_DIR}"tmp/run_job_resolved.json
+#            done
 
             cat ${OPENSHIFT_SP_DIR}tmp/run_job_resolved.json | ${JQ} "." -C
 
