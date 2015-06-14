@@ -2,7 +2,7 @@
     "cluster_id": "",
     "job_configs": {
         "configs": {
-            "edp.java.main_class": "",
+            "edp.java.main_class": ""
         }
     }
 }
