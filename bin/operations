@@ -152,7 +152,7 @@ rawurlencode() {
 
 
 function createJobInternal() {
-   JOB_INTERNAL_NAME="ji-${RANDOM}-$(cat $JOB_BINARY | md5sum | /bin/cut -f1 -d" ")-$(basename $JOB_BINARY)"
+   JOB_INTERNAL_NAME="ji-$(cat $JOB_BINARY | md5sum | /bin/cut -f1 -d" ")-$(basename $JOB_BINARY)"
    echo "File name of job binary is '${JOB_INTERNAL_NAME}'."
 
    rawurlencode "$JOB_INTERNAL_NAME"
