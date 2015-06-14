@@ -160,7 +160,7 @@ function createJobInternal() {
 
    curl -s -X PUT "$SAHARA_URL/job-binary-internals/$REPLY" \
                  -H "X-Auth-Token: ${OPENSTACK_TOKEN}" \
-                 --data-binary @"$JOB_BINARY" \
+                 -T "$JOB_BINARY" \
                  > "${OPENSHIFT_SP_DIR}"/tmp/response_create_job_binary_internals.json
 
 
