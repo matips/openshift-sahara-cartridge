@@ -19,12 +19,13 @@ function run_hook() {
 
 function start() {
     client_message "Starting Sahara cartridge" >> ${OPENSHIFT_SP_LOG}
+
+    createCluster "${OPENSHIFT_REPO_DIR}cluster/config.properties"
+    deployJob "${OPENSHIFT_REPO_DIR}cluster/config.properties"
 }
 
 function deploy(){
     echo "Deploying with Sahara" >> ${OPENSHIFT_SP_LOG}
-    createCluster "${OPENSHIFT_REPO_DIR}cluster/config.properties"
-    deployJob "${OPENSHIFT_REPO_DIR}cluster/config.properties"
 
 #    curl -H "Content-Type: application/json"  \
 #            -X POST \
