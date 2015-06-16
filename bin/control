@@ -66,7 +66,10 @@ function tidy() {
 
   client_message "Emptying diy logs in dir: $OPENSHIFT_LOG_DIR"
   shopt -s dotglob
+  client_message "Deleting cluster"
+  createCluster "$OPENSHIFT_REPO_DIRcluster/config.properties"
   rm -rf $OPENSHIFT_LOG_DIR/diy.log*
+
 }
 
 case "$1" in
