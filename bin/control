@@ -23,7 +23,8 @@ function start() {
 
 function deploy(){
     echo "Deploying with Sahara" >> ${OPENSHIFT_SP_LOG}
-    createCluster "$OPENSHIFT_REPO_DIRcluster/config.properties"
+    createCluster "${OPENSHIFT_REPO_DIR}cluster/config.properties"
+    deployJob "${OPENSHIFT_REPO_DIR}cluster/config.properties"
 
 #    curl -H "Content-Type: application/json"  \
 #            -X POST \
@@ -52,6 +53,8 @@ function status() {
 
 function reload() {
     client_result "Reloading Shara cart" >> ${OPENSHIFT_SP_LOG}
+
+
     restart
 }
 
