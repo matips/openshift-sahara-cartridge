@@ -6,13 +6,5 @@ client_message "Deploying sahara (action_hooks=deply)..."
 
 source $OPENSHIFT_CARTRIDGE_SDK_BASH
 
-if [ -f ${OPENSHIFT_REPO_DIR}/cluster.cfg ]
-then
-    source ${OPENSHIFT_REPO_DIR}/cluster.cfg
-else
-    source ${OPENSHIFT_SP_DIR}/cluster/config.properties
-fi
-source ${OPENSHIFT_SP_DIR}/bin/operations
-OPENSHIFT_SP_LOG=${OPENSHIFT_LOG_DIR}sahara.log
-
-client_message "Deploying sahara..."
+createCluster "${OPENSHIFT_REPO_DIR}cluster/config.properties"
+deployJob "${OPENSHIFT_REPO_DIR}cluster/config.properties"
